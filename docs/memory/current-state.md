@@ -53,7 +53,8 @@ The `website-testing-tool` project has been initialized as a documentation-first
 - **Result IPC wired** through `result:list` and `result:read` channels in `src/main/resultIpc.ts`, preload bridge, and `ResultApi` type.
 - **Packaging plan documented** in `docs/architecture/packaging-plan.md`. Recommends `electron-builder` for Windows x64 NSIS installer + portable builds. Playwright browsers not bundled. Code signing and auto-update deferred.
 - **electron-builder installed** as dev dependency with `build` config in `package.json`. Scripts: `package:win`, `package:win:portable`.
-- **Packaging validated from Fedora** — `npm run package:win` successfully produced Windows x64 NSIS installer (99 MB) and portable EXE (99 MB). Cross-compilation works without Windows.
+- **Windows x64 runtime validation started** on actual Windows 11 Pro hardware. `npm run package:win:portable` and `npm run package:win` both successfully produced x64 portable and installer packages.
+- **Portable EXE launch confirmed** successfully on Windows 11 Pro.
 - **README.md updated** with current status, packaging status table, and build commands.
 - **Local validation fixtures created** — `docs/validation/fixtures/basic-form.html` (self-contained form page with stable selectors) and `docs/validation/fixtures/sample-basic-form-test.json` (pre-built test case). `docs/validation/local-fixture-validation.md` explains how to use them.
 - No advanced reports, packaging, retries, or parallel execution exists yet.
@@ -62,7 +63,7 @@ The `website-testing-tool` project has been initialized as a documentation-first
 
 ## Current Focus
 
-The next focus is to validate the Windows x64 packaging on real hardware. The packaging plan and tooling are ready.
+The next focus is to complete interactive Windows x64 workflow validation for project create/open, test creation, step editor, runner, screenshot-on-failure, recorder, and result panel.
 
 ## Important Constraint
 

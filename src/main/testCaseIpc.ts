@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import type { TestCase } from '../shared/project-schema';
+import { validateTestCase } from '../shared/project-schema';
 import type { TestCaseActionResult, TestCaseListActionResult } from '../shared/preload-api';
 import {
   createTestCase as storageCreateTestCase,
@@ -81,29 +82,19 @@ export function registerTestCaseIpc(): void {
         return { ok: false, error: 'Project path is required.' };
       }
 
-      if (!isTestCase(testCase)) {
-        return { ok: false, error: 'Invalid test case data.' };
+      const validationErrors = validateTestCase(testCase);
+      if (validationErrors.length > 0) {
+        return { ok: false, error: `Invalid test case data: ${validationErrors.join(' ')}` };
       }
 
       try {
-        const updated = await storageSaveTestCase(projectPath, testCase);
+        const updated = await storageSaveTestCase(projectPath, testCase as TestCase);
 
         return { ok: true, testCase: updated };
       } catch (error) {
         return { ok: false, error: getErrorMessage(error) };
       }
     }
-  );
-}
-
-function isTestCase(value: unknown): value is TestCase {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'testId' in value &&
-    typeof (value as Record<string, unknown>).testId === 'string' &&
-    'name' in value &&
-    typeof (value as Record<string, unknown>).name === 'string'
   );
 }
 

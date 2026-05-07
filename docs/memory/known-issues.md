@@ -27,9 +27,11 @@ Last updated: 2026-05-07
 - Browser recording is implemented but selectors are basic (id, data-testid, name, tag+class). No self-healing or smart locator generation yet.
 - Project creation currently chooses a parent folder and creates a generated project folder name; there is no project rename, delete, migration, or recovery flow yet.
 - The renderer test case list uses `toTestCaseFileName` to derive file names from test IDs, which is correct but means the file name is not human-readable.
+- Windows x64 package build succeeds, but installer and portable packaging emit warnings for missing `author` metadata, default Electron icon, and electron-builder shell args deprecation.
+- Interactive Windows x64 workflow validation is still incomplete: project create/open, test creation, step editor, runner, screenshot-on-failure, recorder, and result panel need hands-on confirmation.
 
 ## Current Blockers
 
-- Windows x64 runtime validation requires a Windows machine or VM (packages built successfully from Fedora).
+- Windows x64 runtime validation is partially complete: package build and portable launch succeeded, but core workflows remain unverified.
 - Windows ARM packaging deferred — Playwright ARM64 browser support pending.
 - No user interview data exists yet.
