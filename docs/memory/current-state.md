@@ -9,6 +9,7 @@ The repository now has a working Electron + React + TypeScript MVP workbench wit
 ## Current Facts
 
 - Accepted MVP stack: Electron, React, TypeScript, Node.js, Playwright, and local file storage.
+- Product style direction is now documented in `docs/ux/product-style-direction.md` as **Local QA Workbench**: primarily Linear with secondary influence from Cursor, Raycast, Sentry, and Stripe.
 - Windows x64 is the first packaging target. Windows ARM remains a validation risk and must not be marketed as supported yet.
 - Core local workflow exists: create/open a project, create/edit/save tests, record browser actions, run tests, and review JSON-backed results.
 - The current renderer shell follows the accepted `DESIGN.md` workbench direction and has already passed a Windows x64 hands-on UI workflow validation.
@@ -27,7 +28,7 @@ The repository now has a working Electron + React + TypeScript MVP workbench wit
 
 ## Current Focus
 
-Re-run Windows portable packaging in a Windows session that can extract electron-builder's `winCodeSign` cache, then validate the new missing-Chromium message in the packaged app on a machine without Playwright browsers installed.
+Re-run Windows portable packaging in a Windows session that can extract electron-builder's `winCodeSign` cache, then validate the new missing-Chromium message in the packaged app on a machine without Playwright browsers installed. The new style direction is documented, but not yet applied as a separate implementation pass.
 
 ## Important Constraint
 

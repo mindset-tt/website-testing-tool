@@ -6,8 +6,9 @@ Last updated: 2026-05-07
 
 1. Re-run `npm run package:win:portable` in a Windows session with symlink creation rights or a primed electron-builder `winCodeSign` cache, remove any local Playwright Chromium install, and confirm the packaged app shows the new missing-browser guidance for both Run and Recorder.
 2. Decide the final publisher/legal entity for package `author` and copyright metadata before code signing or commercial installer branding work.
-3. Consider project rename/delete flows after the packaging and first-run validation tasks are stable.
-4. Continue recorder/runner hardening only after the packaging follow-up above is finished.
+3. Apply the new `Local QA Workbench` direction incrementally to shared renderer surfaces such as the sidebar, page headers, and panel/list styling without changing product behavior.
+4. Consider project rename/delete flows after the packaging, first-run validation, and shared shell styling tasks are stable.
+5. Continue recorder/runner hardening only after the packaging follow-up above is finished.
 
 ## Notes
 
@@ -18,4 +19,5 @@ Last updated: 2026-05-07
 - The current workspace package attempt is blocked by an electron-builder `winCodeSign` symlink extraction privilege issue, not by missing metadata.
 - Playwright browsers are still not bundled. The app now shows a clear `npx playwright install chromium` message when Chromium is missing, but the packaged flow still needs hands-on validation on real Windows hardware.
 - Step reordering is now implemented in the manual step editor with simple Move Up / Move Down controls. No drag-and-drop library was added.
+- `docs/ux/product-style-direction.md` defines the chosen product direction: a Linear-led `Local QA Workbench` blend with Cursor, Raycast, Sentry, and Stripe as secondary references.
 - Code signing and auto-update remain deferred for MVP.

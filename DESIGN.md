@@ -14,6 +14,15 @@ The product must earn trust through visual discipline, not decoration. Every pix
 
 ---
 
+## Product Style Reference
+
+- Primary reference: Linear
+- Secondary references: Cursor, Raycast, Sentry, Stripe
+- Do not copy exact branding
+- Use the references only for interaction quality, layout discipline, and product seriousness
+
+---
+
 ## 2. Design principles
 
 1. **Restraint over decoration.** Use fewer colors, fewer fills, fewer borders. Let space do the work.
