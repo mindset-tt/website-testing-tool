@@ -1552,6 +1552,11 @@ select:focus-visible,
   margin: 0 0 14px;
 }
 
+.report-detail h4,
+.report-failure-section h5 {
+  color: var(--color-text-primary);
+}
+
 .report-metadata {
   display: grid;
   gap: 12px;
@@ -1560,7 +1565,6 @@ select:focus-visible,
 }
 
 .report-metadata div,
-.report-screenshot-info,
 .report-step {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border-default);
@@ -1568,15 +1572,13 @@ select:focus-visible,
   padding: 14px;
 }
 
-.report-metadata dt,
-.report-screenshot-info dt {
+.report-metadata dt {
   color: var(--color-text-secondary);
   font-size: 0.72rem;
   font-weight: 700;
 }
 
-.report-metadata dd,
-.report-screenshot-info dd {
+.report-metadata dd {
   color: var(--color-text-primary);
   font-size: 0.84rem;
   margin: 6px 0 0;
@@ -1585,6 +1587,97 @@ select:focus-visible,
 .report-mono {
   font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
   overflow-wrap: anywhere;
+}
+
+.report-failure-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(236, 90, 107, 0.2);
+  border-radius: var(--radius-md);
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.report-failure-card-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.report-failure-card-header h4 {
+  font-size: 0.98rem;
+  margin-bottom: 0;
+}
+
+.report-copy-notice {
+  margin-top: 12px;
+}
+
+.report-failure-sections {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.report-failure-section {
+  background: var(--color-canvas-default);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.report-failure-section h5 {
+  font-size: 0.86rem;
+  margin: 0;
+}
+
+.report-diagnostic-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.report-diagnostic-evidence {
+  display: grid;
+  gap: 12px;
+}
+
+.report-diagnostic-field {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  min-width: 0;
+  padding: 12px;
+}
+
+.report-diagnostic-field-full {
+  width: 100%;
+}
+
+.report-diagnostic-field dt {
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.report-diagnostic-field dd {
+  color: var(--color-text-primary);
+  font-size: 0.84rem;
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.report-diagnostic-note {
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.report-diagnostic-note-error {
+  color: var(--color-danger-default);
 }
 
 .report-screenshot-preview {
@@ -1623,7 +1716,6 @@ select:focus-visible,
   color: var(--color-danger-default);
 }
 
-.report-screenshot-info,
 .report-steps {
   margin-top: 16px;
 }
@@ -1695,5 +1787,10 @@ select:focus-visible,
   .test-management-actions {
     justify-items: start;
     justify-content: flex-start;
+  }
+
+  .report-diagnostic-grid,
+  .report-metadata {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

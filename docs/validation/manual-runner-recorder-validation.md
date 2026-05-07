@@ -124,6 +124,22 @@ The path is shown in the run result UI and stored in the result JSON.
 4. Confirm a bordered screenshot preview loads below the path.
 5. Confirm a missing or invalid screenshot shows a user-safe preview error instead of a raw filesystem path or stack trace.
 
+## Inspecting Failed-Step Diagnostics
+
+1. Open a failed or error run in the **Results** section.
+2. Confirm the failure summary card clearly shows the failed step number, label, and type.
+3. Confirm the card shows target and timeout details when the saved test definition is still available.
+4. Confirm the error message is readable and no raw stack trace is shown in the normal UI.
+5. Confirm the screenshot path remains visible and the preview still loads when a screenshot exists.
+
+## Copying A Failure Summary
+
+1. Open a failed or error run in the **Results** section.
+2. Click **Copy failure summary**.
+3. Confirm the app shows a success message.
+4. Paste the clipboard contents into a text editor.
+5. Confirm the summary includes the test name or ID, run status, browser, duration, failed step details, error message, and screenshot path when present.
+
 ## Starting Recording
 
 1. With a project open, locate the **Recorder** panel.
@@ -156,6 +172,8 @@ The path is shown in the run result UI and stored in the result JSON.
 | Run passing test | Green PASSED badge, result JSON in `results/` |
 | Run failing test | Red FAILED badge, screenshot in `artifacts/screenshots/` |
 | View failed result in Results | Screenshot path stays visible and a preview loads when the PNG still exists |
+| Inspect failed result details | Failure summary card shows step number, label, type, error, and saved step context when available |
+| Copy failure summary | Clipboard gets a compact plain-text failure summary with no JSON dump or absolute artifact path |
 | Run test with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
 | Start recording | Chromium window opens, status shows "Recording" |
 | Start recording with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
@@ -172,3 +190,4 @@ The path is shown in the run result UI and stored in the result JSON.
 - **File names not human-readable:** Test case file names are derived from test IDs (UUID-based).
 - **No project delete or folder rename:** Projects can be renamed in metadata only, but not deleted or renamed on disk through the UI.
 - **Failure evidence is still minimal:** The Results panel can now preview the failure screenshot, but traces, console logs, and network logs are still out of scope for MVP.
+- **Historical detail drift:** Target, value, and timeout details in historical failed runs are reconstructed from the current saved test case, so they can drift if the test was edited after the run.

@@ -33,13 +33,15 @@ The repository now has a working Electron + React + TypeScript MVP workbench wit
 - The Tests workspace now supports test rename, duplicate, and guarded delete actions. Rename updates only the saved `name` through the existing `saveTestCase` flow, duplicate creates a new JSON-backed test with a new `testId` and regenerated step IDs, and delete requires inline confirmation before removing the test file.
 - Test file names still stay stable and ID-based because they are derived from `testId`, not the human-readable test name.
 - The Results panel now previews failure screenshots for selected failed runs through a preload-safe data URL bridge. The renderer never reads project files directly, and main-process validation only allows `.png` files inside the selected project's `artifacts/screenshots` tree.
+- The Results panel now shows a compact failure summary card for failed and error runs, and it can copy a plain-text failure summary through the browser clipboard API when available.
+- Richer failed-step context in the Results panel currently comes from the current saved test case, not a historical step snapshot inside the run result. That means target, value, and timeout details can drift if the test is edited after the run.
 - The 2026-05-07 packaged portable EXE validation confirmed the missing-Chromium path end to end: the app opens, Tests and Recorder show the missing-browser note, Run and Start Recording show user-safe install guidance, no raw Playwright stack trace is shown in the normal UI, and the app stays running.
 - The packaged validation used the portable EXE plus a temporary user-data directory and a CDP attachment. In this Codex Windows shell, `ELECTRON_RUN_AS_NODE=1` had to be cleared before launching any Electron or packaged-app process.
 - During the Windows missing-Chromium simulation, the local Playwright cache folder `C:\Users\khamp\AppData\Local\ms-playwright\chromium-1217` was renamed first, but the folder did not survive the probe intact and had to be restored with `npx playwright install chromium`.
 
 ## Current Focus
 
-Packaged missing-Chromium validation, project rename, recent-project quick-open, forget-recent cleanup, test-level management, and failure screenshot preview are complete on the current Windows portable build. The next smallest valuable work is to continue runner and results hardening with clearer failure context and evidence handling now that the core local workspace flows are in place. Final publisher/legal metadata remains deferred and should not block MVP feature work.
+Packaged missing-Chromium validation, project rename, recent-project quick-open, forget-recent cleanup, test-level management, failure screenshot preview, and failure summary copy are complete on the current Windows portable build. The next smallest valuable work is to continue runner and results hardening with more stable historical failure context and richer evidence handling now that the core local workspace flows are in place. Final publisher/legal metadata remains deferred and should not block MVP feature work.
 
 ## Important Constraint
 

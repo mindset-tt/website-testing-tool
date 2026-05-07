@@ -1,10 +1,45 @@
+import { Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 
-import type { RunResult } from '../../shared/project-schema';
+import { toTestCaseFileName } from '../../shared/project-schema';
+import type { RunResult, TestCase, TestStep } from '../../shared/project-schema';
+import {
+  buildFailureSummary,
+  getFailureScreenshotPath,
+  getPrimaryFailureStep,
+  getStepDefinitionForResult
+} from '../../shared/resultDiagnostics';
 
 interface ReportPanelProps {
   readonly projectPath: string;
+}
+
+interface DiagnosticFieldProps {
+  readonly label: string;
+  readonly value: string;
+  readonly mono?: boolean;
+}
+
+function DiagnosticField({ label, value, mono = false }: DiagnosticFieldProps): ReactElement {
+  return (
+    <div className="report-diagnostic-field">
+      <dt>{label}</dt>
+      <dd className={mono ? 'report-mono' : undefined}>{value}</dd>
+    </div>
+  );
+}
+
+function getStepValueLabel(step: TestStep): string {
+  if (step.type === 'assertText') {
+    return 'Expected value';
+  }
+
+  if (step.type === 'fill') {
+    return 'Input value';
+  }
+
+  return 'Value';
 }
 
 export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
@@ -12,9 +47,24 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedResult, setSelectedResult] = useState<RunResult | null>(null);
+  const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null);
+  const [stepContextLoading, setStepContextLoading] = useState(false);
+  const [stepContextError, setStepContextError] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
+
+  const failureStepResult = selectedResult ? getPrimaryFailureStep(selectedResult) : null;
+  const failureTestStep = getStepDefinitionForResult(failureStepResult, selectedTestCase?.steps);
+  const failureScreenshotPath = selectedResult ? getFailureScreenshotPath(selectedResult, failureStepResult) : null;
+  const failureSummary = selectedResult && selectedResult.status !== 'passed'
+    ? buildFailureSummary(selectedResult, {
+        stepResult: failureStepResult,
+        testStep: failureTestStep
+      })
+    : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -52,9 +102,54 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   }, [projectPath]);
 
   useEffect(() => {
-    const screenshotPath = selectedResult?.failureScreenshotPath;
+    const selectedRun = selectedResult;
 
-    if (!screenshotPath) {
+    if (!selectedRun || selectedRun.status === 'passed') {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadStepContext = async (): Promise<void> => {
+      setStepContextLoading(true);
+      setStepContextError(null);
+      setSelectedTestCase(null);
+
+      try {
+        const result = await window.websiteTestingTool.testCase.readTestCase(
+          projectPath,
+          toTestCaseFileName(selectedRun.testId)
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        if (result.ok) {
+          setSelectedTestCase(result.testCase);
+        } else {
+          setStepContextError('Saved step details are unavailable for this result.');
+        }
+      } catch {
+        if (!cancelled) {
+          setStepContextError('Saved step details are unavailable for this result.');
+        }
+      } finally {
+        if (!cancelled) {
+          setStepContextLoading(false);
+        }
+      }
+    };
+
+    void loadStepContext();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectPath, selectedResult]);
+
+  useEffect(() => {
+    if (!failureScreenshotPath) {
       return;
     }
 
@@ -66,7 +161,10 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
       setPreviewSrc(null);
 
       try {
-        const result = await window.websiteTestingTool.result.readFailureScreenshot(projectPath, screenshotPath);
+        const result = await window.websiteTestingTool.result.readFailureScreenshot(
+          projectPath,
+          failureScreenshotPath
+        );
 
         if (cancelled) {
           return;
@@ -93,10 +191,39 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [projectPath, selectedResult?.failureScreenshotPath, selectedResult?.runId]);
+  }, [failureScreenshotPath, projectPath, selectedResult?.runId]);
 
   const handleSelectResult = (result: RunResult): void => {
     setSelectedResult(result);
+    setSelectedTestCase(null);
+    setStepContextLoading(false);
+    setStepContextError(null);
+    setPreviewLoading(false);
+    setPreviewError(null);
+    setPreviewSrc(null);
+    setCopyMessage(null);
+    setCopyError(null);
+  };
+
+  const handleCopyFailureSummary = async (): Promise<void> => {
+    if (!failureSummary) {
+      return;
+    }
+
+    setCopyMessage(null);
+    setCopyError(null);
+
+    if (typeof navigator.clipboard?.writeText !== 'function') {
+      setCopyError('Clipboard copy is unavailable in this app session.');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(failureSummary);
+      setCopyMessage('Failure summary copied.');
+    } catch {
+      setCopyError('Could not copy the failure summary. Try copying the visible details manually.');
+    }
   };
 
   return (
@@ -177,26 +304,127 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
             </div>
           </dl>
 
-          {selectedResult.failureScreenshotPath && (
-            <div className="report-screenshot-info">
-              <dt>Screenshot</dt>
-              <dd className="report-mono">{selectedResult.failureScreenshotPath}</dd>
-              <div className="report-screenshot-preview" aria-live="polite">
-                {previewLoading && (
-                  <p className="report-screenshot-status">Loading preview…</p>
-                )}
-                {!previewLoading && previewError && (
-                  <p className="report-screenshot-error">{previewError}</p>
-                )}
-                {!previewLoading && !previewError && previewSrc && (
-                  <img
-                    className="report-screenshot-image"
-                    src={previewSrc}
-                    alt={`Failure screenshot for ${selectedResult.testName}`}
-                  />
-                )}
+          {selectedResult.status !== 'passed' && (
+            <section className="report-failure-card" aria-label="Failure summary">
+              <div className="report-failure-card-header">
+                <div>
+                  <p className="eyebrow">Failure summary</p>
+                  <h4>What failed, where, and what evidence exists?</h4>
+                </div>
+                <button
+                  type="button"
+                  className="button button-secondary compact-button"
+                  disabled={stepContextLoading || !failureSummary}
+                  onClick={() => {
+                    void handleCopyFailureSummary();
+                  }}
+                >
+                  <Copy size={15} />
+                  Copy failure summary
+                </button>
               </div>
-            </div>
+
+              {(copyMessage || copyError) && (
+                <p className={copyError ? 'notice notice-error report-copy-notice' : 'notice report-copy-notice'}>
+                  {copyError ?? copyMessage}
+                </p>
+              )}
+
+              <div className="report-failure-sections">
+                <section className="report-failure-section" aria-label="What failed">
+                  <h5>What failed?</h5>
+                  <dl className="report-diagnostic-grid">
+                    <DiagnosticField
+                      label="Step"
+                      value={failureStepResult ? `Step ${failureStepResult.stepIndex + 1}` : 'Not recorded'}
+                    />
+                    <DiagnosticField
+                      label="Label"
+                      value={failureStepResult?.label ?? 'Not recorded'}
+                    />
+                    <DiagnosticField
+                      label="Type"
+                      value={failureStepResult?.type ?? 'Not recorded'}
+                    />
+                  </dl>
+                  {!failureStepResult && (
+                    <p className="report-diagnostic-note">
+                      This run stopped before a failed step result was recorded.
+                    </p>
+                  )}
+                </section>
+
+                <section className="report-failure-section" aria-label="Where it failed">
+                  <h5>Where did it fail?</h5>
+                  {stepContextLoading && (
+                    <p className="report-diagnostic-note">Loading saved step details…</p>
+                  )}
+                  {!stepContextLoading && stepContextError && (
+                    <p className="report-diagnostic-note report-diagnostic-note-error">{stepContextError}</p>
+                  )}
+                  {!stepContextLoading && !stepContextError && failureTestStep && (
+                    <dl className="report-diagnostic-grid">
+                      <DiagnosticField
+                        label="Target"
+                        value={failureTestStep.target ?? 'Not recorded'}
+                        mono={Boolean(failureTestStep.target)}
+                      />
+                      {failureTestStep.value && (
+                        <DiagnosticField
+                          label={getStepValueLabel(failureTestStep)}
+                          value={failureTestStep.value}
+                        />
+                      )}
+                      {typeof failureTestStep.timeoutMs === 'number' && (
+                        <DiagnosticField
+                          label="Timeout"
+                          value={`${failureTestStep.timeoutMs}ms`}
+                        />
+                      )}
+                    </dl>
+                  )}
+                  {!stepContextLoading && !stepContextError && !failureTestStep && failureStepResult && (
+                    <p className="report-diagnostic-note">
+                      Saved target and timeout details are unavailable for this result.
+                    </p>
+                  )}
+                </section>
+
+                <section className="report-failure-section" aria-label="Failure evidence">
+                  <h5>What evidence exists?</h5>
+                  <div className="report-diagnostic-evidence">
+                    <div className="report-diagnostic-field report-diagnostic-field-full">
+                      <dt>Error</dt>
+                      <dd>
+                        {failureStepResult?.errorMessage ??
+                          'No detailed error message was recorded for this run.'}
+                      </dd>
+                    </div>
+                    {failureScreenshotPath && (
+                      <div className="report-diagnostic-field report-diagnostic-field-full">
+                        <dt>Screenshot path</dt>
+                        <dd className="report-mono">{failureScreenshotPath}</dd>
+                        <div className="report-screenshot-preview" aria-live="polite">
+                          {previewLoading && (
+                            <p className="report-screenshot-status">Loading preview…</p>
+                          )}
+                          {!previewLoading && previewError && (
+                            <p className="report-screenshot-error">{previewError}</p>
+                          )}
+                          {!previewLoading && !previewError && previewSrc && (
+                            <img
+                              className="report-screenshot-image"
+                              src={previewSrc}
+                              alt={`Failure screenshot for ${selectedResult.testName}`}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+            </section>
           )}
 
           {selectedResult.stepResults.length > 0 && (

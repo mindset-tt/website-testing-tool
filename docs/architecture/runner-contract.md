@@ -110,6 +110,12 @@ interface StepResult {
 }
 ```
 
+MVP note:
+
+- `StepResult` does not currently snapshot `target`, `value`, or `timeoutMs`.
+- The Results UI may reconstruct richer failed-step context from the current saved test case when it still exists.
+- If the user edits a test after a run, those reconstructed details can drift from the exact historical run state.
+
 ### `StepStatus`
 
 ```typescript
