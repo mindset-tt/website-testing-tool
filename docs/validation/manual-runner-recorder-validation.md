@@ -116,6 +116,14 @@ When a step fails, a screenshot is saved to:
 
 The path is shown in the run result UI and stored in the result JSON.
 
+## Inspecting Failure Screenshot Preview
+
+1. Run or open a failed result that has a `failureScreenshotPath`.
+2. Open the **Results** section and select that run.
+3. Confirm the screenshot path text remains visible.
+4. Confirm a bordered screenshot preview loads below the path.
+5. Confirm a missing or invalid screenshot shows a user-safe preview error instead of a raw filesystem path or stack trace.
+
 ## Starting Recording
 
 1. With a project open, locate the **Recorder** panel.
@@ -147,6 +155,7 @@ The path is shown in the run result UI and stored in the result JSON.
 | Delete test | Inline confirmation appears, file is removed only after confirmation, selection updates safely |
 | Run passing test | Green PASSED badge, result JSON in `results/` |
 | Run failing test | Red FAILED badge, screenshot in `artifacts/screenshots/` |
+| View failed result in Results | Screenshot path stays visible and a preview loads when the PNG still exists |
 | Run test with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
 | Start recording | Chromium window opens, status shows "Recording" |
 | Start recording with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
@@ -162,3 +171,4 @@ The path is shown in the run result UI and stored in the result JSON.
 - **Fedora fallback:** Playwright uses Ubuntu 24.04 fallback build on Fedora.
 - **File names not human-readable:** Test case file names are derived from test IDs (UUID-based).
 - **No project delete or folder rename:** Projects can be renamed in metadata only, but not deleted or renamed on disk through the UI.
+- **Failure evidence is still minimal:** The Results panel can now preview the failure screenshot, but traces, console logs, and network logs are still out of scope for MVP.

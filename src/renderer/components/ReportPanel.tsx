@@ -12,6 +12,9 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedResult, setSelectedResult] = useState<RunResult | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +50,50 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
       cancelled = true;
     };
   }, [projectPath]);
+
+  useEffect(() => {
+    const screenshotPath = selectedResult?.failureScreenshotPath;
+
+    if (!screenshotPath) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadPreview = async (): Promise<void> => {
+      setPreviewLoading(true);
+      setPreviewError(null);
+      setPreviewSrc(null);
+
+      try {
+        const result = await window.websiteTestingTool.result.readFailureScreenshot(projectPath, screenshotPath);
+
+        if (cancelled) {
+          return;
+        }
+
+        if (result.ok) {
+          setPreviewSrc(result.dataUrl);
+        } else {
+          setPreviewError(result.error);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setPreviewError(err instanceof Error ? err.message : 'Failed to load failure screenshot preview.');
+        }
+      } finally {
+        if (!cancelled) {
+          setPreviewLoading(false);
+        }
+      }
+    };
+
+    void loadPreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectPath, selectedResult?.failureScreenshotPath, selectedResult?.runId]);
 
   const handleSelectResult = (result: RunResult): void => {
     setSelectedResult(result);
@@ -134,6 +181,21 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
             <div className="report-screenshot-info">
               <dt>Screenshot</dt>
               <dd className="report-mono">{selectedResult.failureScreenshotPath}</dd>
+              <div className="report-screenshot-preview" aria-live="polite">
+                {previewLoading && (
+                  <p className="report-screenshot-status">Loading preview…</p>
+                )}
+                {!previewLoading && previewError && (
+                  <p className="report-screenshot-error">{previewError}</p>
+                )}
+                {!previewLoading && !previewError && previewSrc && (
+                  <img
+                    className="report-screenshot-image"
+                    src={previewSrc}
+                    alt={`Failure screenshot for ${selectedResult.testName}`}
+                  />
+                )}
+              </div>
             </div>
           )}
 

@@ -1,8 +1,12 @@
 import { ipcMain } from 'electron';
 
 import { IPC_CHANNELS } from '../shared/ipc-channels';
-import type { ResultListActionResult, ResultReadActionResult } from '../shared/preload-api';
-import { listRunResults, readRunResult } from '../storage/resultStorage';
+import type {
+  FailureScreenshotReadActionResult,
+  ResultListActionResult,
+  ResultReadActionResult
+} from '../shared/preload-api';
+import { listRunResults, readFailureScreenshot, readRunResult } from '../storage/resultStorage';
 
 export function registerResultIpc(): void {
   ipcMain.handle(
@@ -37,6 +41,31 @@ export function registerResultIpc(): void {
         const result = await readRunResult(projectPath, runId);
 
         return { ok: true, result };
+      } catch (error) {
+        return { ok: false, error: getErrorMessage(error) };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.resultReadFailureScreenshot,
+    async (
+      _event,
+      projectPath: unknown,
+      screenshotPath: unknown
+    ): Promise<FailureScreenshotReadActionResult> => {
+      if (typeof projectPath !== 'string' || projectPath.trim().length === 0) {
+        return { ok: false, error: 'Project path is required.' };
+      }
+
+      if (typeof screenshotPath !== 'string' || screenshotPath.trim().length === 0) {
+        return { ok: false, error: 'Failure screenshot path is required.' };
+      }
+
+      try {
+        const dataUrl = await readFailureScreenshot(projectPath.trim(), screenshotPath.trim());
+
+        return { ok: true, dataUrl };
       } catch (error) {
         return { ok: false, error: getErrorMessage(error) };
       }

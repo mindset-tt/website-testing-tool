@@ -173,9 +173,23 @@ export type ResultReadActionResult =
       readonly error: string;
     };
 
+export type FailureScreenshotReadActionResult =
+  | {
+      readonly ok: true;
+      readonly dataUrl: string;
+    }
+  | {
+      readonly ok: false;
+      readonly error: string;
+    };
+
 export interface ResultApi {
   readonly listResults: (projectPath: string) => Promise<ResultListActionResult>;
   readonly readResult: (projectPath: string, runId: string) => Promise<ResultReadActionResult>;
+  readonly readFailureScreenshot: (
+    projectPath: string,
+    screenshotPath: string
+  ) => Promise<FailureScreenshotReadActionResult>;
 }
 
 export interface WebsiteTestingToolApi {

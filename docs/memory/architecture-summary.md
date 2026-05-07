@@ -25,6 +25,7 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 - The app now checks for missing Playwright Chromium before runner and recorder launch and surfaces `npx playwright install chromium` guidance through existing UI error/status areas.
 - The 2026-05-07 portable EXE validation confirmed that when Playwright Chromium is missing, the packaged app opens, shows the Tests and Recorder notes, surfaces user-safe Run and Start Recording errors, avoids raw Playwright stack traces in the normal UI, and stays running.
 - Runtime validation from this Codex Windows shell requires clearing `ELECTRON_RUN_AS_NODE=1` before launching Electron or packaged-app processes.
+- The Results panel now previews failure screenshots through a validated preload/main-process bridge that only allows `.png` files inside the selected project's `artifacts/screenshots` directory.
 - Project metadata rename now updates only `project.json` `name` and `updatedAt`, preserving the stable `projectId`, `createdAt`, and folder path.
 - Recent projects are now cached outside project folders in Electron `userData` as `recent-projects.json`, with a small deduplicated quick-open list for the no-project startup state.
 - The no-project startup state now supports a non-destructive forget action for recent-project entries. It removes only the matching cache entry by project path and does not touch project folders or project metadata.
@@ -40,4 +41,4 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 
 ## Next Work
 
-Improve runner and results diagnostics now that the core local project and recent-workspace management flows are covered, then continue tightening shell polish without changing the accepted local-first architecture.
+Continue improving runner and results diagnostics now that the core local project and recent-workspace management flows are covered, then continue tightening shell polish without changing the accepted local-first architecture.

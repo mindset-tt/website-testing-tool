@@ -1587,6 +1587,42 @@ select:focus-visible,
   overflow-wrap: anywhere;
 }
 
+.report-screenshot-preview {
+  align-items: center;
+  background: var(--color-canvas-default);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+  min-height: 180px;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.report-screenshot-image {
+  border-radius: 8px;
+  display: block;
+  max-height: 240px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.report-screenshot-status,
+.report-screenshot-error {
+  font-size: 0.82rem;
+  margin: 0;
+  text-align: center;
+}
+
+.report-screenshot-status {
+  color: var(--color-text-secondary);
+}
+
+.report-screenshot-error {
+  color: var(--color-danger-default);
+}
+
 .report-screenshot-info,
 .report-steps {
   margin-top: 16px;

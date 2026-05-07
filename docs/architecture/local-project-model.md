@@ -168,6 +168,7 @@ Each step represents one human-readable action or assertion. The MVP schema supp
 - The renderer must not read or write files directly.
 - Main process storage functions must validate user-selected paths before reading or writing.
 - File operations must stay inside folders selected by the user through Electron dialogs.
+- Result screenshot previews must be read through a validated main-process path and stay inside `artifacts/screenshots`.
 
 ## Out Of Scope For This Slice
 

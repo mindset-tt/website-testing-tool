@@ -152,6 +152,8 @@ Example: `artifacts/screenshots/run_abc123/step-2-failure.png`
 - Screenshots are only captured on step failure.
 - The `screenshotPath` in `StepResult` and `RunResult` is relative to the project root.
 - The screenshot directory is created on demand.
+- Renderer screenshot previews must be loaded through a validated main-process bridge. The renderer must not read arbitrary project files directly.
+- MVP screenshot previews are limited to `.png` files that resolve inside `{projectPath}/artifacts/screenshots/`.
 
 ## 7. Runner Lifecycle
 
