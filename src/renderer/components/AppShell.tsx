@@ -365,6 +365,30 @@ export function AppShell(): ReactElement {
     }
   };
 
+  const handleForgetRecentProject = async (
+    projectPath: string,
+    projectDisplayName: string
+  ): Promise<void> => {
+    setProjectActionPending(true);
+    setProjectMessage(null);
+    setProjectError(null);
+
+    try {
+      const result = await window.websiteTestingTool.project.forgetRecentProject(projectPath);
+
+      if (result.ok) {
+        setRecentProjects(result.items);
+        setProjectMessage(`Removed ${projectDisplayName} from recent projects. Project files were not changed.`);
+      } else {
+        setProjectError(result.error);
+      }
+    } catch (error) {
+      setProjectError(error instanceof Error ? error.message : 'Failed to forget recent project.');
+    } finally {
+      setProjectActionPending(false);
+    }
+  };
+
   const handleSelectTestCase = useCallback(
     async (fileName: string): Promise<void> => {
       if (!currentProject) {
@@ -673,24 +697,35 @@ export function AppShell(): ReactElement {
             ) : (
               <div className="compact-list">
                 {recentProjects.map((item) => (
-                  <button
-                    key={item.projectPath}
-                    type="button"
-                    className="recent-project-row"
-                    disabled={projectActionPending}
-                    onClick={() => {
-                      void handleOpenRecentProject(item.projectPath);
-                    }}
-                  >
-                    <span className="test-row-icon">
-                      <FolderOpen size={15} />
-                    </span>
-                    <span className="recent-project-copy">
-                      <strong>{item.name}</strong>
-                      <span className="recent-project-path">{item.projectPath}</span>
-                    </span>
-                    <small className="recent-project-meta">Opened {formatDate(item.lastOpenedAt)}</small>
-                  </button>
+                  <div key={item.projectPath} className="recent-project-row">
+                    <button
+                      type="button"
+                      className="recent-project-open"
+                      disabled={projectActionPending}
+                      onClick={() => {
+                        void handleOpenRecentProject(item.projectPath);
+                      }}
+                    >
+                      <span className="test-row-icon">
+                        <FolderOpen size={15} />
+                      </span>
+                      <span className="recent-project-copy">
+                        <strong>{item.name}</strong>
+                        <span className="recent-project-path">{item.projectPath}</span>
+                      </span>
+                      <small className="recent-project-meta">Opened {formatDate(item.lastOpenedAt)}</small>
+                    </button>
+                    <button
+                      type="button"
+                      className="recent-project-forget"
+                      disabled={projectActionPending}
+                      onClick={() => {
+                        void handleForgetRecentProject(item.projectPath, item.name);
+                      }}
+                    >
+                      Forget
+                    </button>
+                  </div>
                 ))}
               </div>
             )}

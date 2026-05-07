@@ -28,6 +28,7 @@ The repository now has a working Electron + React + TypeScript MVP workbench wit
 - The Tests and Recorder sections now show a small missing-Chromium status note before the user tries to run or record.
 - Project metadata rename is now supported through a preload-safe IPC path. It updates only `project.json` `name` plus `updatedAt`, preserves `projectId`, preserves `createdAt`, and does not rename the project folder on disk.
 - The app now keeps a small recent-projects cache in Electron `userData` at `recent-projects.json`. The list is deduplicated by project path, sorted by `lastOpenedAt` descending, capped at eight items, and prunes missing or invalid project folders during refresh.
+- Users can now manually forget a recent project entry without deleting any project files. Forget removes only the matching recent-project cache entry by path and leaves the underlying project folder plus `project.json` unchanged.
 - Manual step editing now supports simple step reordering with Move Up and Move Down controls. The first step disables Move Up, the last step disables Move Down, and reordered steps save through the existing `saveTestCase` API without changing schema shape.
 - The Tests workspace now supports test rename, duplicate, and guarded delete actions. Rename updates only the saved `name` through the existing `saveTestCase` flow, duplicate creates a new JSON-backed test with a new `testId` and regenerated step IDs, and delete requires inline confirmation before removing the test file.
 - Test file names still stay stable and ID-based because they are derived from `testId`, not the human-readable test name.
@@ -37,7 +38,7 @@ The repository now has a working Electron + React + TypeScript MVP workbench wit
 
 ## Current Focus
 
-Packaged missing-Chromium validation, project rename, recent-project quick-open, and test-level management are complete on the current Windows portable build. The next smallest valuable work is non-destructive workspace recovery polish: let the user forget stale recent entries or otherwise recover cleanly from moved project folders without adding destructive project delete yet. Final publisher/legal metadata remains deferred and should not block MVP feature work.
+Packaged missing-Chromium validation, project rename, recent-project quick-open, forget-recent cleanup, and test-level management are complete on the current Windows portable build. The next smallest valuable work is to resume runner and results hardening with clearer failure diagnostics now that the core local workspace flows are in place. Final publisher/legal metadata remains deferred and should not block MVP feature work.
 
 ## Important Constraint
 

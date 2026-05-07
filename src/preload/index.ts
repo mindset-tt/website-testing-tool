@@ -25,6 +25,10 @@ const api: WebsiteTestingToolApi = {
     listRecentProjects: () =>
       ipcRenderer.invoke(IPC_CHANNELS.projectRecentList) as Promise<
         Awaited<ReturnType<WebsiteTestingToolApi['project']['listRecentProjects']>>
+      >,
+    forgetRecentProject: (projectPath) =>
+      ipcRenderer.invoke(IPC_CHANNELS.projectRecentForget, projectPath) as Promise<
+        Awaited<ReturnType<WebsiteTestingToolApi['project']['forgetRecentProject']>>
       >
   },
   testCase: {

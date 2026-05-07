@@ -27,6 +27,7 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 - Runtime validation from this Codex Windows shell requires clearing `ELECTRON_RUN_AS_NODE=1` before launching Electron or packaged-app processes.
 - Project metadata rename now updates only `project.json` `name` and `updatedAt`, preserving the stable `projectId`, `createdAt`, and folder path.
 - Recent projects are now cached outside project folders in Electron `userData` as `recent-projects.json`, with a small deduplicated quick-open list for the no-project startup state.
+- The no-project startup state now supports a non-destructive forget action for recent-project entries. It removes only the matching cache entry by project path and does not touch project folders or project metadata.
 - The manual step editor now supports simple step reordering through Move Up / Move Down controls while preserving the existing local storage schema and save flow.
 - The test designer now supports rename, duplicate, and guarded delete actions without changing the project schema, exposing raw filesystem APIs, or renaming test files away from their stable `testId`-derived paths.
 - Windows ARM remains deferred until Playwright ARM64 browser support and real hardware validation are available.
@@ -39,4 +40,4 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 
 ## Next Work
 
-Add a non-destructive "forget recent project" or stale-workspace recovery action, then continue tightening non-developer diagnostics and shell polish without changing the accepted local-first architecture.
+Improve runner and results diagnostics now that the core local project and recent-workspace management flows are covered, then continue tightening shell polish without changing the accepted local-first architecture.

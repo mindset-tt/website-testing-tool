@@ -37,6 +37,14 @@ The Electron app window opens with the "Website Testing Tool" shell.
 3. Confirm the project opens without using the folder picker.
 4. If the folder was deleted or moved, confirm the app shows a clear error and the stale recent item is no longer offered.
 
+## Forgetting A Recent Project
+
+1. Launch the app with no project open.
+2. In the **Recent projects** section, click **Forget** on one saved workspace row.
+3. Confirm that row disappears from the list.
+4. Confirm the app shows that the recent entry was removed without deleting project files.
+5. Confirm the project folder still exists on disk and can still be reopened manually.
+
 ## Renaming A Project
 
 1. Open an existing project.
@@ -129,6 +137,7 @@ The path is shown in the run result UI and stored in the result JSON.
 |---|---|
 | Create project | `project.json` written, directories created |
 | Open recent project | Recent row opens project directly; missing folders show safe error and are removed from recents |
+| Forget recent project | Recent row disappears, project files stay untouched, manual reopen still works |
 | Rename project | `project.json` name changes, folder path stays unchanged, recent list reflects new name |
 | Create test | `.test.json` file in `tests/` |
 | Edit steps | Steps saved with validation |
@@ -152,4 +161,4 @@ The path is shown in the run result UI and stored in the result JSON.
 - **Chromium only:** No Firefox or WebKit support in MVP.
 - **Fedora fallback:** Playwright uses Ubuntu 24.04 fallback build on Fedora.
 - **File names not human-readable:** Test case file names are derived from test IDs (UUID-based).
-- **No project rename/delete:** Projects cannot be renamed or deleted through the UI.
+- **No project delete or folder rename:** Projects can be renamed in metadata only, but not deleted or renamed on disk through the UI.

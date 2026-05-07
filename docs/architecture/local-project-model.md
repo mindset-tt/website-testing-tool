@@ -54,6 +54,7 @@ Recent projects are intentionally stored outside project folders so the app can 
   - Keep the list small for MVP (`8` items).
   - Deduplicate by project path.
   - Sort by `lastOpenedAt` descending.
+  - Allow the user to forget a recent project entry without deleting the project folder or changing `project.json`.
   - Drop missing or invalid project folders during refresh instead of surfacing raw filesystem errors in the renderer.
 
 This cache is app state, not project schema. It should not be copied into project folders or treated as portable project data.

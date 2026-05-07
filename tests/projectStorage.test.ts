@@ -7,8 +7,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createProjectFolderStructure,
+  forgetRecentProject,
   listRecentProjects,
   mergeRecentProjects,
+  readProjectMetadata,
   rememberRecentProject,
   renameProject
 } from '../src/storage/projectStorage';
@@ -91,6 +93,55 @@ describe('project storage', () => {
         name: 'Second Project',
         projectPath: secondProject.projectPath,
         lastOpenedAt: '2026-05-07T10:00:00.000Z'
+      }
+    ]);
+  });
+
+  it('forgets only the matching recent project path without touching project files', async () => {
+    const parentFolder = await createTempDir('wtt-forget-parent');
+    const userDataPath = await createTempDir('wtt-forget-user-data');
+    const firstProject = await createProjectFolderStructure(parentFolder, 'First Project', '0.0.0');
+    const secondProject = await createProjectFolderStructure(parentFolder, 'Second Project', '0.0.0');
+    const thirdProject = await createProjectFolderStructure(parentFolder, 'Third Project', '0.0.0');
+
+    await rememberRecentProject(userDataPath, firstProject, '2026-05-07T08:00:00.000Z');
+    await rememberRecentProject(userDataPath, secondProject, '2026-05-07T10:00:00.000Z');
+    await rememberRecentProject(userDataPath, thirdProject, '2026-05-07T09:00:00.000Z');
+
+    const updated = await forgetRecentProject(userDataPath, thirdProject.projectPath);
+
+    expect(updated).toEqual([
+      {
+        name: 'Second Project',
+        projectPath: secondProject.projectPath,
+        lastOpenedAt: '2026-05-07T10:00:00.000Z'
+      },
+      {
+        name: 'First Project',
+        projectPath: firstProject.projectPath,
+        lastOpenedAt: '2026-05-07T08:00:00.000Z'
+      }
+    ]);
+
+    const preservedMetadata = await readProjectMetadata(thirdProject.projectPath);
+
+    expect(preservedMetadata.projectId).toBe(thirdProject.metadata.projectId);
+  });
+
+  it('does not fail when forgetting a recent project path that is absent', async () => {
+    const parentFolder = await createTempDir('wtt-forget-absent-parent');
+    const userDataPath = await createTempDir('wtt-forget-absent-user-data');
+    const project = await createProjectFolderStructure(parentFolder, 'Only Project', '0.0.0');
+
+    await rememberRecentProject(userDataPath, project, '2026-05-07T09:00:00.000Z');
+
+    const updated = await forgetRecentProject(userDataPath, 'C:\\Projects\\not-present');
+
+    expect(updated).toEqual([
+      {
+        name: 'Only Project',
+        projectPath: project.projectPath,
+        lastOpenedAt: '2026-05-07T09:00:00.000Z'
       }
     ]);
   });

@@ -13,7 +13,6 @@ Last updated: 2026-05-07
 - This Codex Windows shell exports `ELECTRON_RUN_AS_NODE=1`, so direct Electron or packaged-app launches from automation will exit immediately unless that environment variable is cleared first.
 - Recorder selectors are still basic (`id`, `data-testid`, `name`, `tag + class`) and can remain brittle on real sites.
 - Destructive project delete, project folder rename, migration, and fuller recovery flows do not exist yet.
-- Recent projects can open quickly now, but there is no manual "forget this project" action yet if the workspace is still valid but no longer useful in the quick-open list.
 - Failure screenshots are the MVP minimum, but they may be insufficient diagnostic evidence for some real QA workflows.
 - The accepted Electron stack still carries app-size and security-hardening costs that need ongoing review.
 - Fedora remains workable for development, but final packaging and runtime validation still depend on Windows sessions.

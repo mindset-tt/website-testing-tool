@@ -189,6 +189,32 @@ export function registerProjectIpc(): void {
       }
     }
   );
+
+  ipcMain.handle(
+    IPC_CHANNELS.projectRecentForget,
+    async (_event, projectPath: unknown): Promise<RecentProjectsActionResult> => {
+      if (typeof projectPath !== 'string' || projectPath.trim().length === 0) {
+        return {
+          ok: false,
+          error: 'Project path is required.'
+        };
+      }
+
+      try {
+        const items = await forgetRecentProject(app.getPath('userData'), projectPath.trim());
+
+        return {
+          ok: true,
+          items
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          error: getErrorMessage(error)
+        };
+      }
+    }
+  );
 }
 
 function isCreateProjectRequest(value: unknown): value is CreateProjectRequest {

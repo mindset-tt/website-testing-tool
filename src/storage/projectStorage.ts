@@ -166,14 +166,21 @@ export async function rememberRecentProject(
   await writeStoredRecentProjects(userDataPath, updatedItems);
 }
 
-export async function forgetRecentProject(userDataPath: string, projectPath: string): Promise<void> {
+export async function forgetRecentProject(
+  userDataPath: string,
+  projectPath: string
+): Promise<readonly RecentProjectItem[]> {
   const storedItems = await readStoredRecentProjects(userDataPath);
   const pathKey = toProjectPathKey(projectPath);
-  const filteredItems = storedItems.filter((item) => toProjectPathKey(item.projectPath) !== pathKey);
+  const filteredItems = normalizeRecentProjects(
+    storedItems.filter((item) => toProjectPathKey(item.projectPath) !== pathKey)
+  );
 
   if (filteredItems.length !== storedItems.length) {
     await writeStoredRecentProjects(userDataPath, filteredItems);
   }
+
+  return filteredItems;
 }
 
 export function mergeRecentProjects(

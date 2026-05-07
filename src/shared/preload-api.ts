@@ -86,6 +86,7 @@ export interface ProjectApi {
   readonly openRecentProject: (projectPath: string) => Promise<ProjectActionResult>;
   readonly renameProject: (projectPath: string, name: string) => Promise<ProjectActionResult>;
   readonly listRecentProjects: () => Promise<RecentProjectsActionResult>;
+  readonly forgetRecentProject: (projectPath: string) => Promise<RecentProjectsActionResult>;
 }
 
 export type RunTestActionResult =

@@ -746,18 +746,29 @@ select:focus-visible,
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-md);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 60px;
+  padding: 12px;
+}
+
+.recent-project-row:hover {
+  border-color: var(--color-border-strong);
+}
+
+.recent-project-open {
+  align-items: center;
+  background: transparent;
   color: var(--color-text-primary);
   cursor: pointer;
   display: grid;
   gap: 12px;
   grid-template-columns: 36px minmax(0, 1fr) auto;
-  min-height: 60px;
-  padding: 12px;
+  min-height: 36px;
+  min-width: 0;
+  padding: 0;
   text-align: left;
-}
-
-.recent-project-row:hover:not(:disabled) {
-  border-color: var(--color-border-strong);
 }
 
 .recent-project-copy {
@@ -775,6 +786,22 @@ select:focus-visible,
 .recent-project-meta {
   color: var(--color-text-secondary);
   font-size: 0.8rem;
+}
+
+.recent-project-forget {
+  background: transparent;
+  border: 1px solid rgba(236, 90, 107, 0.18);
+  border-radius: var(--radius-md);
+  color: var(--color-danger-default);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.recent-project-forget:hover:not(:disabled) {
+  background: rgba(236, 90, 107, 0.08);
 }
 
 .recent-project-path {
