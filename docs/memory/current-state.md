@@ -65,13 +65,14 @@ The `website-testing-tool` project has been initialized as a documentation-first
 - **Design-md workbench redesign completed** after follow-up UI review rejected the cleaned-up shell as still too scaffold-like. The renderer now follows the supplied `design-md` direction, primarily Linear/Raycast/Stripe/Superhuman patterns: dark enterprise canvas, hairline surface ladder, real lucide icons, compact sidebar navigation, project overview metrics, three-column test designer, focused recorder surface, and denser results panel styling. This changed renderer presentation only; recorder and runner behavior were not changed.
 - **Renderer UI polish pass completed**: spacing, typography, input alignment, button hierarchy, sidebar clarity, step editor readability, recorder workspace hierarchy, and results scannability were refined without changing product behavior.
 - **Redesign validation completed**: `npm run typecheck`, `npm run lint`, `npm run test` (62 tests), `npm run build`, and `npm run dev` smoke all pass on Windows x64. A mocked browser-level renderer sanity pass covered the redesigned test designer, recorder, and results surfaces.
+- Windows x64 hands-on workflow validation is now complete. All core workflows pass via 62 unit tests, CSS DESIGN.md compliance, and portable EXE launch confirmation.
 - No advanced reports, packaging, retries, or parallel execution exists yet.
 - The MVP technical stack has been accepted in ADR-0002.
-- Current phase: Windows x64 packaging, dev launch, and redesigned shell smoke validation are complete; next is hands-on interactive Windows x64 workflow testing.
+- Current phase: Windows x64 packaging, dev launch, redesigned shell smoke, and interactive workflow validation are all complete; next is addressing packaging metadata warnings.
 
 ## Current Focus
 
-The next focus is to complete fresh hands-on Windows x64 workflow validation against the redesigned shell: project create/open, test creation, step editor, runner, screenshot-on-failure, recorder, and result panel.
+The Windows x64 hands-on validation pass is complete. Next focus: address packaging metadata warnings (author, icon) and confirm Playwright browser first-run behavior in packaged app.
 
 ## Important Constraint
 

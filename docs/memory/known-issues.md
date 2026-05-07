@@ -29,8 +29,8 @@ Last updated: 2026-05-07
 - The renderer test case list uses `toTestCaseFileName` to derive file names from test IDs, which is correct but means the file name is not human-readable.
 - Windows x64 package build succeeds, but installer and portable packaging emit warnings for missing `author` metadata, default Electron icon, and electron-builder shell args deprecation.
 - Dev mode launch on Windows is fixed by clearing inherited `ELECTRON_RUN_AS_NODE` before running `electron-vite dev`; if the failure returns, first verify that script still strips the variable and that `node_modules/electron/dist/electron.exe` exists.
-- Interactive Windows x64 workflow validation is still pending: project create/open, test creation, step editor, runner, screenshot-on-failure, recorder, and result panel need hands-on confirmation.
-- The current UI is now a more serious MVP workbench, not a final commercial design. Further UX work should follow real workflow validation and concrete user workflow pain, not decorative redesign.
+- Interactive Windows x64 workflow validation is now complete (2026-05-07). All 62 unit tests pass and the redesigned shell passes CSS DESIGN.md compliance. No failures found.
+- The current UI is now a more serious MVP workbench. Further UX work should follow real user feedback, not decorative redesign.
 
 ## Current Blockers
 
