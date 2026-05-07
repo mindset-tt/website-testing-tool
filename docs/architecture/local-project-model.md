@@ -1,6 +1,6 @@
 # Local Project Model
 
-Last updated: 2026-05-06
+Last updated: 2026-05-07
 
 This document defines the MVP local project model for Website Testing Tool. The model is intentionally file-based, inspectable, and small. It should support create/open/save project behavior before recorder, runner, reports, or packaging work begins.
 
@@ -36,8 +36,27 @@ The first implementation slice should:
 - Create the required subfolders.
 - Write `project.json`.
 - Open an existing project by selecting a folder that contains a valid `project.json`.
+- Allow renaming the project display name by updating only `project.json`.
 
 The first slice should not create example tests unless needed for manual validation. If an example test is later added, it must use the test case JSON schema below.
+
+## App-Level Recent Projects Cache
+
+Recent projects are intentionally stored outside project folders so the app can show quick-open entries before any project is open.
+
+- Location: Electron `userData` directory.
+- File name: `recent-projects.json`.
+- Entry fields:
+  - `name`
+  - `projectPath`
+  - `lastOpenedAt`
+- Behavior:
+  - Keep the list small for MVP (`8` items).
+  - Deduplicate by project path.
+  - Sort by `lastOpenedAt` descending.
+  - Drop missing or invalid project folders during refresh instead of surfacing raw filesystem errors in the renderer.
+
+This cache is app state, not project schema. It should not be copied into project folders or treated as portable project data.
 
 ## `project.json` Schema
 
@@ -143,6 +162,7 @@ Each step represents one human-readable action or assertion. The MVP schema supp
 - All schema versions must be `1` for the MVP.
 - Directory paths in `project.json` must be relative names, not absolute paths.
 - Project names must be non-empty after trimming.
+- Project rename updates only `project.json` metadata. It must not rename the project folder on disk.
 - Existing project folders must contain a valid `project.json`.
 - The renderer must not read or write files directly.
 - Main process storage functions must validate user-selected paths before reading or writing.

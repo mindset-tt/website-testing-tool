@@ -9,6 +9,12 @@ export interface OpenedProject {
   readonly metadata: ProjectMetadata;
 }
 
+export interface RecentProjectItem {
+  readonly name: string;
+  readonly projectPath: string;
+  readonly lastOpenedAt: string;
+}
+
 export type ProjectActionResult =
   | {
       readonly ok: true;
@@ -18,6 +24,16 @@ export type ProjectActionResult =
       readonly ok: false;
       readonly canceled: boolean;
       readonly error?: string;
+    };
+
+export type RecentProjectsActionResult =
+  | {
+      readonly ok: true;
+      readonly items: readonly RecentProjectItem[];
+    }
+  | {
+      readonly ok: false;
+      readonly error: string;
     };
 
 export interface TestCaseListItem {
@@ -67,6 +83,9 @@ export interface TestCaseApi {
 export interface ProjectApi {
   readonly createProject: (request: CreateProjectRequest) => Promise<ProjectActionResult>;
   readonly openProject: () => Promise<ProjectActionResult>;
+  readonly openRecentProject: (projectPath: string) => Promise<ProjectActionResult>;
+  readonly renameProject: (projectPath: string, name: string) => Promise<ProjectActionResult>;
+  readonly listRecentProjects: () => Promise<RecentProjectsActionResult>;
 }
 
 export type RunTestActionResult =

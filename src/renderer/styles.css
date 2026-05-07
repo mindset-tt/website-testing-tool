@@ -411,6 +411,13 @@ select:focus-visible,
   line-height: 1.1;
 }
 
+.empty-workspace-section {
+  border-top: 1px solid var(--color-border-default);
+  display: grid;
+  gap: 16px;
+  padding-top: 20px;
+}
+
 .empty-workspace p {
   color: var(--color-text-secondary);
   margin: 0;
@@ -472,12 +479,22 @@ select:focus-visible,
   justify-items: end;
 }
 
+.project-strip-actions,
+.project-management-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .project-path,
 .project-action-copy {
   margin: 0;
 }
 
-.project-name-field {
+.project-name-field,
+.project-rename-field {
   color: var(--color-text-secondary);
   display: grid;
   font-size: 0.75rem;
@@ -486,6 +503,7 @@ select:focus-visible,
 }
 
 .project-name-field input,
+.project-rename-field input,
 .test-rename-field input,
 .step-field input,
 .step-field select {
@@ -502,7 +520,12 @@ select:focus-visible,
   width: 220px;
 }
 
+.project-rename-field input {
+  width: 100%;
+}
+
 .project-name-field input:focus,
+.project-rename-field input:focus,
 .test-rename-field input:focus,
 .step-field input:focus,
 .step-field select:focus {
@@ -718,6 +741,48 @@ select:focus-visible,
   border-color: var(--color-border-strong);
 }
 
+.recent-project-row {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  min-height: 60px;
+  padding: 12px;
+  text-align: left;
+}
+
+.recent-project-row:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+}
+
+.recent-project-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.recent-project-copy strong {
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+}
+
+.recent-project-path,
+.recent-project-meta {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.recent-project-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .test-workbench {
   display: grid;
   gap: 18px;
@@ -785,6 +850,16 @@ select:focus-visible,
 .test-detail-header h2 {
   font-size: 1.2rem;
   margin-top: 4px;
+}
+
+.project-management-strip {
+  align-items: end;
+  border-top: 1px solid var(--color-border-default);
+  display: grid;
+  gap: 14px;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-top: 16px;
 }
 
 .test-detail-controls {
@@ -1534,6 +1609,21 @@ select:focus-visible,
   }
 
   .test-management-strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .project-strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .project-strip-meta,
+  .project-strip-actions,
+  .project-management-actions {
+    justify-items: start;
+    justify-content: flex-start;
+  }
+
+  .project-management-strip {
     grid-template-columns: minmax(0, 1fr);
   }
 

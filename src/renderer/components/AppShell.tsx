@@ -20,7 +20,12 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-import type { OpenedProject, ProjectActionResult, TestCaseListItem } from '../../shared/preload-api';
+import type {
+  OpenedProject,
+  ProjectActionResult,
+  RecentProjectItem,
+  TestCaseListItem
+} from '../../shared/preload-api';
 import type { RunResult, TestCase } from '../../shared/project-schema';
 import { toTestCaseFileName } from '../../shared/project-schema';
 import { RecorderPanel } from './RecorderPanel';
@@ -68,6 +73,9 @@ export function AppShell(): ReactElement {
   const [projectMessage, setProjectMessage] = useState<string | null>(null);
   const [projectError, setProjectError] = useState<string | null>(null);
   const [projectActionPending, setProjectActionPending] = useState(false);
+  const [recentProjects, setRecentProjects] = useState<readonly RecentProjectItem[]>([]);
+  const [isRenamingProject, setIsRenamingProject] = useState(false);
+  const [projectRenameDraft, setProjectRenameDraft] = useState('');
 
   const [testCases, setTestCases] = useState<readonly TestCaseListItem[]>([]);
   const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null);
@@ -84,6 +92,7 @@ export function AppShell(): ReactElement {
 
   const hasProject = currentProject !== null;
   const selectedStepCount = selectedTestCase?.steps.length ?? 0;
+  const projectRenameDraftValue = projectRenameDraft.trim();
   const renameDraftValue = renameDraft.trim();
   const runBadgeTone = runPending
     ? 'warning'
@@ -125,6 +134,10 @@ export function AppShell(): ReactElement {
     setProjectName(event.target.value);
   };
 
+  const handleProjectRenameDraftChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setProjectRenameDraft(event.target.value);
+  };
+
   const handleRenameDraftChange = (event: ChangeEvent<HTMLInputElement>): void => {
     setRenameDraft(event.target.value);
   };
@@ -137,6 +150,17 @@ export function AppShell(): ReactElement {
     await runProjectAction(() => window.websiteTestingTool.project.openProject());
   };
 
+  const refreshRecentProjects = useCallback(async (): Promise<void> => {
+    const result = await window.websiteTestingTool.project.listRecentProjects();
+
+    if (result.ok) {
+      setRecentProjects(result.items);
+      return;
+    }
+
+    throw new Error(result.error);
+  }, []);
+
   const runProjectAction = async (action: () => Promise<ProjectActionResult>): Promise<void> => {
     setProjectActionPending(true);
     setProjectMessage(null);
@@ -148,14 +172,22 @@ export function AppShell(): ReactElement {
       if (result.ok) {
         setCurrentProject(result.project);
         setProjectName(result.project.metadata.name);
+        setProjectRenameDraft(result.project.metadata.name);
         setProjectMessage(`Project open: ${result.project.metadata.name}`);
+        setTestCases([]);
         setSelectedTestCase(null);
         setRenameDraft('');
+        setIsRenamingProject(false);
         setIsRenamingTestCase(false);
         setConfirmDeleteTestCase(false);
         setRunResult(null);
         setRunError(null);
         setActiveSection('tests');
+        try {
+          await refreshRecentProjects();
+        } catch {
+          // Keep project opening usable even if recent-project refresh fails.
+        }
         return;
       }
 
@@ -195,6 +227,30 @@ export function AppShell(): ReactElement {
     }
 
     return null;
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async (): Promise<void> => {
+      try {
+        const result = await window.websiteTestingTool.project.listRecentProjects();
+
+        if (!cancelled && result.ok) {
+          setRecentProjects(result.items);
+        }
+      } catch {
+        if (!cancelled) {
+          setRecentProjects([]);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -299,6 +355,16 @@ export function AppShell(): ReactElement {
     }
   };
 
+  const handleOpenRecentProject = async (projectPath: string): Promise<void> => {
+    await runProjectAction(() => window.websiteTestingTool.project.openRecentProject(projectPath));
+
+    try {
+      await refreshRecentProjects();
+    } catch {
+      // Recent-project cleanup should not block project opening feedback.
+    }
+  };
+
   const handleSelectTestCase = useCallback(
     async (fileName: string): Promise<void> => {
       if (!currentProject) {
@@ -352,6 +418,67 @@ export function AppShell(): ReactElement {
       setRunError(error instanceof Error ? error.message : 'Run failed.');
     } finally {
       setRunPending(false);
+    }
+  };
+
+  const handleStartRenameProject = (): void => {
+    if (!currentProject) {
+      return;
+    }
+
+    setProjectRenameDraft(currentProject.metadata.name);
+    setIsRenamingProject(true);
+  };
+
+  const handleCancelRenameProject = (): void => {
+    setProjectRenameDraft(currentProject?.metadata.name ?? '');
+    setIsRenamingProject(false);
+  };
+
+  const handleRenameProject = async (): Promise<void> => {
+    if (!currentProject) {
+      return;
+    }
+
+    if (projectRenameDraftValue.length === 0) {
+      setProjectError('Project name is required.');
+      return;
+    }
+
+    if (projectRenameDraftValue === currentProject.metadata.name) {
+      setIsRenamingProject(false);
+      return;
+    }
+
+    setProjectActionPending(true);
+    setProjectMessage(null);
+    setProjectError(null);
+
+    try {
+      const result = await window.websiteTestingTool.project.renameProject(
+        currentProject.projectPath,
+        projectRenameDraftValue
+      );
+
+      if (result.ok) {
+        setCurrentProject(result.project);
+        setProjectName(result.project.metadata.name);
+        setProjectRenameDraft(result.project.metadata.name);
+        setIsRenamingProject(false);
+        setProjectMessage(`Project renamed: ${result.project.metadata.name}`);
+
+        try {
+          await refreshRecentProjects();
+        } catch {
+          // Keep rename usable even if the recent-project cache cannot refresh.
+        }
+      } else {
+        setProjectError(result.error ?? 'Project rename failed.');
+      }
+    } catch (error) {
+      setProjectError(error instanceof Error ? error.message : 'Project rename failed.');
+    } finally {
+      setProjectActionPending(false);
     }
   };
 
@@ -533,6 +660,41 @@ export function AppShell(): ReactElement {
             <p>Local projects keep tests, results, screenshots, traces, videos, and logs together on disk.</p>
           </div>
           {renderProjectActions()}
+          <div className="empty-workspace-section" aria-label="Recent projects">
+            <div className="panel-header compact">
+              <div>
+                <p className="eyebrow">Recent projects</p>
+                <h2>Continue a workspace</h2>
+              </div>
+            </div>
+
+            {recentProjects.length === 0 ? (
+              <p className="empty-copy">Projects you create or open will appear here for quick access.</p>
+            ) : (
+              <div className="compact-list">
+                {recentProjects.map((item) => (
+                  <button
+                    key={item.projectPath}
+                    type="button"
+                    className="recent-project-row"
+                    disabled={projectActionPending}
+                    onClick={() => {
+                      void handleOpenRecentProject(item.projectPath);
+                    }}
+                  >
+                    <span className="test-row-icon">
+                      <FolderOpen size={15} />
+                    </span>
+                    <span className="recent-project-copy">
+                      <strong>{item.name}</strong>
+                      <span className="recent-project-path">{item.projectPath}</span>
+                    </span>
+                    <small className="recent-project-meta">Opened {formatDate(item.lastOpenedAt)}</small>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {(projectMessage || projectError) && (
             <p className={projectError ? 'notice notice-error' : 'notice'}>
               {projectError ?? projectMessage}
@@ -554,9 +716,59 @@ export function AppShell(): ReactElement {
           </div>
         </div>
         <div className="project-strip-meta">
-          <span className="status-badge status-badge-accent">Workspace ready</span>
+          <div className="project-strip-actions">
+            <span className="status-badge status-badge-accent">Workspace ready</span>
+            <button
+              type="button"
+              className="button button-secondary compact-button"
+              disabled={projectActionPending}
+              onClick={handleStartRenameProject}
+            >
+              Rename
+            </button>
+          </div>
           <p className="project-path project-path-meta">{currentProject.projectPath}</p>
         </div>
+        {isRenamingProject && (
+          <form
+            className="project-management-strip"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleRenameProject();
+            }}
+          >
+            <label className="project-rename-field">
+              <span>Project name</span>
+              <input
+                type="text"
+                value={projectRenameDraft}
+                onChange={handleProjectRenameDraftChange}
+                disabled={projectActionPending}
+              />
+            </label>
+            <div className="project-management-actions">
+              <button
+                type="button"
+                className="button button-secondary compact-button"
+                onClick={handleCancelRenameProject}
+                disabled={projectActionPending}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="button button-primary compact-button"
+                disabled={
+                  projectActionPending ||
+                  projectRenameDraftValue.length === 0 ||
+                  projectRenameDraftValue === currentProject.metadata.name
+                }
+              >
+                Save name
+              </button>
+            </div>
+          </form>
+        )}
         {(projectMessage || projectError) && (
           <p className={projectError ? 'notice notice-error' : 'notice'}>
             {projectError ?? projectMessage}

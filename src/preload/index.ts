@@ -13,6 +13,18 @@ const api: WebsiteTestingToolApi = {
     openProject: () =>
       ipcRenderer.invoke(IPC_CHANNELS.projectOpen) as Promise<
         Awaited<ReturnType<WebsiteTestingToolApi['project']['openProject']>>
+      >,
+    openRecentProject: (projectPath) =>
+      ipcRenderer.invoke(IPC_CHANNELS.projectOpenRecent, projectPath) as Promise<
+        Awaited<ReturnType<WebsiteTestingToolApi['project']['openRecentProject']>>
+      >,
+    renameProject: (projectPath, name) =>
+      ipcRenderer.invoke(IPC_CHANNELS.projectRename, projectPath, name) as Promise<
+        Awaited<ReturnType<WebsiteTestingToolApi['project']['renameProject']>>
+      >,
+    listRecentProjects: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.projectRecentList) as Promise<
+        Awaited<ReturnType<WebsiteTestingToolApi['project']['listRecentProjects']>>
       >
   },
   testCase: {

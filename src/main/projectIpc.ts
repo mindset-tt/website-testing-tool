@@ -2,8 +2,19 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import type { OpenDialogOptions } from 'electron';
 
 import { IPC_CHANNELS } from '../shared/ipc-channels';
-import type { CreateProjectRequest, ProjectActionResult } from '../shared/preload-api';
-import { createProjectFolderStructure, openProject } from '../storage/projectStorage';
+import type {
+  CreateProjectRequest,
+  ProjectActionResult,
+  RecentProjectsActionResult
+} from '../shared/preload-api';
+import {
+  createProjectFolderStructure,
+  forgetRecentProject,
+  listRecentProjects,
+  openProject,
+  rememberRecentProject,
+  renameProject
+} from '../storage/projectStorage';
 
 export function registerProjectIpc(): void {
   ipcMain.handle(
@@ -40,6 +51,7 @@ export function registerProjectIpc(): void {
           request.name,
           app.getVersion()
         );
+        await rememberRecentProject(app.getPath('userData'), project);
 
         return {
           ok: true,
@@ -75,6 +87,7 @@ export function registerProjectIpc(): void {
 
     try {
       const project = await openProject(dialogResult.filePaths[0]);
+      await rememberRecentProject(app.getPath('userData'), project);
 
       return {
         ok: true,
@@ -88,6 +101,94 @@ export function registerProjectIpc(): void {
       };
     }
   });
+
+  ipcMain.handle(
+    IPC_CHANNELS.projectOpenRecent,
+    async (_event, projectPath: unknown): Promise<ProjectActionResult> => {
+      if (typeof projectPath !== 'string' || projectPath.trim().length === 0) {
+        return {
+          ok: false,
+          canceled: false,
+          error: 'Project path is required.'
+        };
+      }
+
+      const normalizedProjectPath = projectPath.trim();
+
+      try {
+        const project = await openProject(normalizedProjectPath);
+        await rememberRecentProject(app.getPath('userData'), project);
+
+        return {
+          ok: true,
+          project
+        };
+      } catch (error) {
+        await forgetRecentProject(app.getPath('userData'), normalizedProjectPath);
+
+        return {
+          ok: false,
+          canceled: false,
+          error: getRecentProjectErrorMessage(error)
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.projectRename,
+    async (_event, projectPath: unknown, name: unknown): Promise<ProjectActionResult> => {
+      if (typeof projectPath !== 'string' || projectPath.trim().length === 0) {
+        return {
+          ok: false,
+          canceled: false,
+          error: 'Project path is required.'
+        };
+      }
+
+      if (typeof name !== 'string' || name.trim().length === 0) {
+        return {
+          ok: false,
+          canceled: false,
+          error: 'Project name is required.'
+        };
+      }
+
+      try {
+        const project = await renameProject(projectPath.trim(), name.trim());
+
+        return {
+          ok: true,
+          project
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          canceled: false,
+          error: getErrorMessage(error)
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.projectRecentList,
+    async (): Promise<RecentProjectsActionResult> => {
+      try {
+        const items = await listRecentProjects(app.getPath('userData'));
+
+        return {
+          ok: true,
+          items
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          error: getErrorMessage(error)
+        };
+      }
+    }
+  );
 }
 
 function isCreateProjectRequest(value: unknown): value is CreateProjectRequest {
@@ -106,4 +207,12 @@ function getErrorMessage(error: unknown): string {
   }
 
   return 'The project action failed.';
+}
+
+function getRecentProjectErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return `This recent project is no longer available. ${error.message}`;
+  }
+
+  return 'This recent project is no longer available.';
 }

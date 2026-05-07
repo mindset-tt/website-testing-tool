@@ -25,6 +25,8 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 - The app now checks for missing Playwright Chromium before runner and recorder launch and surfaces `npx playwright install chromium` guidance through existing UI error/status areas.
 - The 2026-05-07 portable EXE validation confirmed that when Playwright Chromium is missing, the packaged app opens, shows the Tests and Recorder notes, surfaces user-safe Run and Start Recording errors, avoids raw Playwright stack traces in the normal UI, and stays running.
 - Runtime validation from this Codex Windows shell requires clearing `ELECTRON_RUN_AS_NODE=1` before launching Electron or packaged-app processes.
+- Project metadata rename now updates only `project.json` `name` and `updatedAt`, preserving the stable `projectId`, `createdAt`, and folder path.
+- Recent projects are now cached outside project folders in Electron `userData` as `recent-projects.json`, with a small deduplicated quick-open list for the no-project startup state.
 - The manual step editor now supports simple step reordering through Move Up / Move Down controls while preserving the existing local storage schema and save flow.
 - The test designer now supports rename, duplicate, and guarded delete actions without changing the project schema, exposing raw filesystem APIs, or renaming test files away from their stable `testId`-derived paths.
 - Windows ARM remains deferred until Playwright ARM64 browser support and real hardware validation are available.
@@ -37,4 +39,4 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 
 ## Next Work
 
-Add project-level rename and guarded delete or recovery flows, then continue tightening non-developer diagnostics and shell polish without changing the accepted local-first architecture.
+Add a non-destructive "forget recent project" or stale-workspace recovery action, then continue tightening non-developer diagnostics and shell polish without changing the accepted local-first architecture.

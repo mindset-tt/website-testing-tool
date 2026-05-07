@@ -1,6 +1,9 @@
 export const IPC_CHANNELS = {
   projectCreate: 'project:create',
   projectOpen: 'project:open',
+  projectOpenRecent: 'project:openRecent',
+  projectRename: 'project:rename',
+  projectRecentList: 'project:recentList',
   testCaseCreate: 'testCase:create',
   testCaseList: 'testCase:list',
   testCaseRead: 'testCase:read',

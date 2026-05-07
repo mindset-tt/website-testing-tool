@@ -30,6 +30,22 @@ The Electron app window opens with the "Website Testing Tool" shell.
 4. The app creates a project folder with `project.json`, `tests/`, `results/`, `artifacts/`, and `logs/` directories.
 5. The header updates to show the project name and path.
 
+## Opening A Recent Project
+
+1. Launch the app with no project open.
+2. In the **Recent projects** section, choose a saved workspace row.
+3. Confirm the project opens without using the folder picker.
+4. If the folder was deleted or moved, confirm the app shows a clear error and the stale recent item is no longer offered.
+
+## Renaming A Project
+
+1. Open an existing project.
+2. In the project strip, click **Rename**.
+3. Enter a new project name and click **Save name**.
+4. Confirm the visible project name updates.
+5. Confirm the folder path on disk does not change.
+6. Confirm `project.json` preserves `projectId` and `createdAt` while updating `name` and `updatedAt`.
+
 ## Creating a Manual Test
 
 1. With a project open, click **New test** in the "Saved Tests" section.
@@ -112,6 +128,8 @@ The path is shown in the run result UI and stored in the result JSON.
 | Action | Expected |
 |---|---|
 | Create project | `project.json` written, directories created |
+| Open recent project | Recent row opens project directly; missing folders show safe error and are removed from recents |
+| Rename project | `project.json` name changes, folder path stays unchanged, recent list reflects new name |
 | Create test | `.test.json` file in `tests/` |
 | Edit steps | Steps saved with validation |
 | Reorder steps | Step order changes and all step data stays intact after save |
