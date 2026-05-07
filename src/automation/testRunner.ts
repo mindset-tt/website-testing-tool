@@ -7,6 +7,7 @@ import type { Browser, Page } from 'playwright';
 
 import type { TestCase, TestStep, RunResult, StepResult, StepStatus } from '../shared/project-schema';
 import { RUN_RESULT_SCHEMA_VERSION, validateRunResult } from '../shared/project-schema';
+import { assertChromiumAvailable, normalizeChromiumLaunchError } from './playwrightBrowser';
 
 const DEFAULT_TIMEOUT_MS = 30000;
 
@@ -28,6 +29,8 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
   let browser: Browser | null = null;
 
   try {
+    await assertChromiumAvailable('run the selected test');
+
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
     const stepResults: StepResult[] = [];
@@ -81,6 +84,8 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
 
     return runResult;
   } catch (error) {
+    const normalizedError = normalizeChromiumLaunchError(error, 'run the selected test', 'The test run failed.');
+
     // If browser launch itself failed, return an error result
     const finishedAt = new Date().toISOString();
     const durationMs = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
@@ -104,7 +109,7 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
       // Best effort - if we can't save, still throw the original error
     }
 
-    throw error;
+    throw normalizedError;
   } finally {
     if (browser) {
       await browser.close().catch(() => {

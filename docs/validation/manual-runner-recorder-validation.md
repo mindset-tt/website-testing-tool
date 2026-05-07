@@ -11,6 +11,8 @@ This document describes how to manually validate the runner and recorder feature
 - Playwright with Chromium installed (`npx playwright install chromium`)
 - Fedora Linux (or compatible) development environment
 
+If Chromium is missing, the app should now show a clear message telling the user to run `npx playwright install chromium` before using Run or Recorder.
+
 ## Starting the App
 
 ```bash
@@ -42,7 +44,8 @@ The Electron app window opens with the "Website Testing Tool" shell.
    - **Label:** `Check page heading`
    - **Target:** `h1`
    - **Value:** `Example Domain`
-6. Click **Save** to persist the test case.
+6. Use **Move Up** or **Move Down** on a step card to confirm the step order changes without losing any field values.
+7. Click **Save** to persist the test case.
 
 ## Running a Manual Test
 
@@ -98,9 +101,12 @@ The path is shown in the run result UI and stored in the result JSON.
 | Create project | `project.json` written, directories created |
 | Create test | `.test.json` file in `tests/` |
 | Edit steps | Steps saved with validation |
+| Reorder steps | Step order changes and all step data stays intact after save |
 | Run passing test | Green PASSED badge, result JSON in `results/` |
 | Run failing test | Red FAILED badge, screenshot in `artifacts/screenshots/` |
+| Run test with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
 | Start recording | Chromium window opens, status shows "Recording" |
+| Start recording with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
 | Stop recording | Browser closes, steps preview appears |
 | Stop recording with no browser | Error message shown |
 
@@ -108,7 +114,6 @@ The path is shown in the run result UI and stored in the result JSON.
 
 - **assertText not captured by recorder:** Must be added manually in the step editor.
 - **Basic selectors only:** Recorder uses id, data-testid, name, or tag+class. No smart locator generation.
-- **No step reordering:** Steps cannot be reordered in the editor (drag-and-drop not implemented).
 - **Single run only:** No concurrent or parallel test execution.
 - **Chromium only:** No Firefox or WebKit support in MVP.
 - **Fedora fallback:** Playwright uses Ubuntu 24.04 fallback build on Fedora.

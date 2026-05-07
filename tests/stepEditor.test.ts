@@ -5,6 +5,7 @@ import {
   SUPPORTED_STEP_TYPES,
   validateTestStep
 } from '../src/shared/project-schema';
+import { reorderItems } from '../src/shared/reorder';
 import type { TestStep, StepType } from '../src/shared/project-schema';
 
 describe('step editor helpers', () => {
@@ -146,5 +147,58 @@ describe('step editor helpers', () => {
 
       expect(validateTestStep(step)).toEqual([]);
     }
+  });
+
+  it('moves a step up while preserving all step data', () => {
+    const steps: readonly TestStep[] = [
+      {
+        stepId: 'step_1',
+        type: 'navigate',
+        label: 'Go to page',
+        target: 'https://example.com'
+      },
+      {
+        stepId: 'step_2',
+        type: 'fill',
+        label: 'Enter username',
+        target: '#username',
+        value: 'qa-user',
+        timeoutMs: 4000,
+        notes: 'Keep existing credentials'
+      },
+      {
+        stepId: 'step_3',
+        type: 'click',
+        label: 'Submit form',
+        target: '#submit'
+      }
+    ];
+
+    const reordered = reorderItems(steps, 1, 0);
+
+    expect(reordered.map((step) => step.stepId)).toEqual(['step_2', 'step_1', 'step_3']);
+    expect(reordered[0]).toEqual(steps[1]);
+  });
+
+  it('moves a step down while preserving the other steps', () => {
+    const steps = [
+      { stepId: 'step_1', type: 'navigate', label: 'One' },
+      { stepId: 'step_2', type: 'click', label: 'Two' },
+      { stepId: 'step_3', type: 'assertText', label: 'Three' }
+    ] as const;
+
+    const reordered = reorderItems(steps, 0, 1);
+
+    expect(reordered.map((step) => step.stepId)).toEqual(['step_2', 'step_1', 'step_3']);
+  });
+
+  it('returns the same order when the requested move is out of bounds', () => {
+    const steps = [
+      { stepId: 'step_1', type: 'navigate', label: 'One' },
+      { stepId: 'step_2', type: 'click', label: 'Two' }
+    ] as const;
+
+    expect(reorderItems(steps, 0, -1)).toEqual(steps);
+    expect(reorderItems(steps, 1, 2)).toEqual(steps);
   });
 });

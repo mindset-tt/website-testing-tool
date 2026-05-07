@@ -77,6 +77,7 @@ export function AppShell(): ReactElement {
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [runPending, setRunPending] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
+  const [chromiumStatusMessage, setChromiumStatusMessage] = useState<string | null>(null);
 
   const hasProject = currentProject !== null;
   const selectedStepCount = selectedTestCase?.steps.length ?? 0;
@@ -183,6 +184,38 @@ export function AppShell(): ReactElement {
     };
   }, [currentProject]);
 
+  useEffect(() => {
+    if (!currentProject || (activeSection !== 'tests' && activeSection !== 'recorder')) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadAvailability = async (): Promise<void> => {
+      try {
+        const result = await window.websiteTestingTool.browser.getChromiumAvailability();
+
+        if (!cancelled) {
+          if (result.ok) {
+            setChromiumStatusMessage(result.availability.available ? null : result.availability.message ?? null);
+          } else {
+            setChromiumStatusMessage(null);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setChromiumStatusMessage(null);
+        }
+      }
+    };
+
+    void loadAvailability();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSection, currentProject]);
+
   const handleCreateTest = async (): Promise<void> => {
     if (!currentProject) {
       return;
@@ -274,6 +307,7 @@ export function AppShell(): ReactElement {
 
       if (result.ok) {
         setRunResult(result.result);
+        setChromiumStatusMessage(null);
         setProjectMessage(`Run complete: ${result.result.status}`);
       } else {
         setRunError(result.error);
@@ -578,6 +612,10 @@ export function AppShell(): ReactElement {
           {runPending ? 'Running' : 'Run selected test'}
         </button>
 
+        {!runError && !runResult && chromiumStatusMessage && (
+          <p className="notice notice-error">{chromiumStatusMessage}</p>
+        )}
+
         {runError && <p className="notice notice-error">{runError}</p>}
 
         <div className="inspector-stack">
@@ -652,6 +690,7 @@ export function AppShell(): ReactElement {
       return (
         <RecorderPanel
           projectName={currentProject.metadata.name}
+          chromiumStatusMessage={chromiumStatusMessage}
           onRecordingSaved={(steps) => {
             setProjectMessage(`Recording saved: ${steps.length} step${steps.length !== 1 ? 's' : ''}`);
           }}

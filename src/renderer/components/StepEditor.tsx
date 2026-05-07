@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import type { ChangeEvent, ReactElement } from 'react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 
 import type { TestCase, TestStep, StepType } from '../../shared/project-schema';
 import { createStepId, SUPPORTED_STEP_TYPES } from '../../shared/project-schema';
+import { reorderItems } from '../../shared/reorder';
 
 interface StepEditorProps {
   readonly testCase: TestCase;
@@ -100,6 +102,10 @@ export function StepEditor({ testCase, projectPath, onSaved, onError }: StepEdit
     setSteps((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleMoveStep = (index: number, direction: -1 | 1): void => {
+    setSteps((prev) => reorderItems(prev, index, index + direction));
+  };
+
   const handleSave = async (): Promise<void> => {
     setSaving(true);
 
@@ -157,15 +163,37 @@ export function StepEditor({ testCase, projectPath, onSaved, onError }: StepEdit
           <div className="step-card" key={step.stepId}>
             <div className="step-card-header">
               <span className="step-number">Step {index + 1}</span>
-              <button
-                type="button"
-                className="delete-step-button"
-                onClick={() => handleDeleteStep(index)}
-                disabled={saving}
-                aria-label={`Delete step ${index + 1}`}
-              >
-                Delete
-              </button>
+              <div className="step-card-actions">
+                <button
+                  type="button"
+                  className="reorder-step-button"
+                  onClick={() => handleMoveStep(index, -1)}
+                  disabled={saving || index === 0}
+                  aria-label={`Move step ${index + 1} up`}
+                >
+                  <ArrowUp size={14} />
+                  Move Up
+                </button>
+                <button
+                  type="button"
+                  className="reorder-step-button"
+                  onClick={() => handleMoveStep(index, 1)}
+                  disabled={saving || index === steps.length - 1}
+                  aria-label={`Move step ${index + 1} down`}
+                >
+                  <ArrowDown size={14} />
+                  Move Down
+                </button>
+                <button
+                  type="button"
+                  className="delete-step-button"
+                  onClick={() => handleDeleteStep(index)}
+                  disabled={saving}
+                  aria-label={`Delete step ${index + 1}`}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
 
             <div className="step-fields">

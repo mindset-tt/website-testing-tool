@@ -43,6 +43,7 @@ This document defines the packaging strategy for the Website Testing Tool MVP. I
 | App ID | `com.website-testing-tool.app` |
 | Product name | `Website Testing Tool` |
 | Current author metadata | `Website Testing Tool Team` placeholder until final publisher/legal entity is chosen |
+| Current copyright metadata | `Copyright © 2026 Website Testing Tool Team` placeholder until final publisher/legal entity is chosen |
 | Build resources directory | `resources/` |
 | Windows icon | `resources/icon.ico` generated from local project assets |
 
@@ -87,20 +88,25 @@ This is the single largest packaging risk. Playwright's Chromium browser is ~150
 
 **Rationale:**
 - Keeps the installer small (~100 MB vs ~300+ MB).
-- Users download browsers on first use via `npx playwright install chromium`.
-- The app can show a "Downloading browser…" UI on first run.
+- Avoids forcing every Windows download to include Chromium when some validation environments will preinstall it.
 - Avoids bundling a browser that may be outdated by the time the user installs.
 
-**Future consideration:** Bundle Chromium for offline/enterprise deployments.
+**Current first-run behavior:** the app does not bundle Chromium and does not yet download it automatically. When Chromium is missing, the runner and recorder now show a clear message telling the user to run `npx playwright install chromium`.
+
+**Future consideration:** Bundle Chromium for offline/enterprise deployments or add a supported in-app install flow once the tradeoff is intentionally accepted.
 
 ## 8. Chromium Dependency Strategy
 
 | Scenario | Approach |
 |---|---|
-| First run, no browser found | Show "Downloading Chromium…" progress; run `npx playwright install chromium` |
+| First run, no browser found | Show a clear missing-browser message with `npx playwright install chromium` and stop before runner/recorder launch |
 | Browser already installed | Use cached Playwright browser |
-| Enterprise/offline | Document manual browser install path |
+| Enterprise/offline | Document manual browser install path or accept a bundled-browser size increase later |
 | Windows ARM | Use installed Microsoft Edge if Playwright ARM64 Chromium unavailable |
+
+Current limitation:
+
+- The packaged app now explains the missing-browser problem clearly, but it still relies on a manual external install command. A supported in-app browser installer does not exist yet.
 
 ## 9. Code Signing — Deferred
 
@@ -136,6 +142,7 @@ Minimal config in `package.json`:
   "build": {
     "appId": "com.website-testing-tool.app",
     "productName": "Website Testing Tool",
+    "copyright": "Copyright © 2026 Website Testing Tool Team",
     "directories": {
       "output": "dist",
       "buildResources": "resources"
@@ -165,7 +172,22 @@ Minimal config in `package.json`:
 }
 ```
 
-## 13. Package Scripts
+## 13. Icon Asset Requirements
+
+electron-builder's Windows default is `build/icon.ico`, but this repository overrides `directories.buildResources` to `resources/`. In this project the effective required Windows icon path is therefore `resources/icon.ico`.
+
+Current icon assets:
+
+- Required for Windows packaging: `resources/icon.ico`
+- Current readable source asset: `resources/icon.svg`
+- Optional future raster source: `resources/icon.png`
+
+Notes:
+
+- `npm run icon:generate` regenerates `resources/icon.ico` from local project drawing code in `scripts/generate-app-icon.mjs`.
+- Do not add font files to generate the app icon. Keep the source in SVG, PNG, or drawing code that stays local to the repository.
+
+## 14. Package Scripts
 
 Add to `package.json`:
 
@@ -179,15 +201,17 @@ Add to `package.json`:
 }
 ```
 
-## 14. Current Warning Status
+## 15. Current Warning Status
 
-As of 2026-05-07, `npm run package:win` and `npm run package:win:portable` on Windows 11 Pro confirm:
+As of 2026-05-07:
 
 - Missing `author` metadata warning: resolved.
 - Default Electron icon warning: resolved; `resources/icon.ico` is applied with `rcedit --set-icon` for the packaged executable.
-- Node.js `DEP0190` shell-args warning: still present under Node.js v24.15.0 during electron-builder dependency collection. Local script argument cleanup did not remove it, and disabling native dependency rebuilds was tested but did not remove it. Treat this as an electron-builder/Node toolchain warning to re-check under Node 22 LTS or a future electron-builder release before commercial release.
+- Historical Node.js `DEP0190` shell-args warning: previously observed under Node.js `v24.15.0` during electron-builder dependency collection.
+- 2026-05-07 re-check on Node.js `v22.17.1`: the `DEP0190` warning did not reproduce before packaging failed later on a separate `winCodeSign` cache extraction privilege error.
+- Current practical blocker in this workspace: `npm run package:win:portable` can fail if the Windows session cannot create the symlinks contained in electron-builder's downloaded `winCodeSign` cache. This is an environment privilege issue, not a package metadata issue.
 
-## 15. Validation Checklist
+## 16. Validation Checklist
 
 ### Pre-validation (Fedora)
 
@@ -223,7 +247,7 @@ As of 2026-05-07, `npm run package:win` and `npm run package:win:portable` on Wi
 - [ ] Browser automation works on ARM64
 - [ ] All x64 validation steps pass on ARM64
 
-## 16. Out of Scope for MVP Packaging
+## 17. Out of Scope for MVP Packaging
 
 - Code signing (Authenticode)
 - Auto-update infrastructure

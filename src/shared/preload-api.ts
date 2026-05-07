@@ -72,6 +72,25 @@ export interface RunnerApi {
   readonly runTestCase: (projectPath: string, testId: string) => Promise<RunTestActionResult>;
 }
 
+export interface ChromiumAvailability {
+  readonly available: boolean;
+  readonly message?: string;
+}
+
+export type ChromiumAvailabilityActionResult =
+  | {
+      readonly ok: true;
+      readonly availability: ChromiumAvailability;
+    }
+  | {
+      readonly ok: false;
+      readonly error: string;
+    };
+
+export interface BrowserApi {
+  readonly getChromiumAvailability: () => Promise<ChromiumAvailabilityActionResult>;
+}
+
 export interface RecordedActionItem {
   readonly type: string;
   readonly label: string;
@@ -133,6 +152,7 @@ export interface WebsiteTestingToolApi {
   readonly project: ProjectApi;
   readonly testCase: TestCaseApi;
   readonly runner: RunnerApi;
+  readonly browser: BrowserApi;
   readonly recorder: RecorderApi;
   readonly result: ResultApi;
 }

@@ -3,6 +3,7 @@ import type { Browser, Page } from 'playwright';
 
 import { createStepId } from '../shared/project-schema';
 import type { StepType, TestStep } from '../shared/project-schema';
+import { assertChromiumAvailable, normalizeChromiumLaunchError } from './playwrightBrowser';
 
 export interface RecordedAction {
   readonly type: StepType;
@@ -97,6 +98,8 @@ export class Recorder {
       throw new Error('Recorder is already running.');
     }
 
+    await assertChromiumAvailable('start recording');
+
     this.actions = [];
     this.onAction = onAction;
     this.running = true;
@@ -148,7 +151,7 @@ export class Recorder {
       this.browser = null;
       this.onAction = null;
 
-      throw error;
+      throw normalizeChromiumLaunchError(error, 'start recording', 'Failed to start recording.');
     }
   }
 

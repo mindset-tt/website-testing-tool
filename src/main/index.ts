@@ -6,6 +6,7 @@ import { registerTestCaseIpc } from './testCaseIpc';
 import { registerRunnerIpc } from './runnerIpc';
 import { registerRecorderIpc } from './recorderIpc';
 import { registerResultIpc } from './resultIpc';
+import { registerBrowserIpc } from './browserIpc';
 
 const createMainWindow = (): void => {
   const mainWindow = new BrowserWindow({
@@ -42,6 +43,7 @@ void app.whenReady().then(() => {
   registerRunnerIpc();
   registerRecorderIpc();
   registerResultIpc();
+  registerBrowserIpc();
   createMainWindow();
 
   app.on('activate', () => {

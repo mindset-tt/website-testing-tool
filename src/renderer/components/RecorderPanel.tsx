@@ -6,10 +6,15 @@ import type { TestStep } from '../../shared/project-schema';
 
 interface RecorderPanelProps {
   readonly projectName: string;
+  readonly chromiumStatusMessage?: string | null;
   readonly onRecordingSaved: (steps: readonly TestStep[]) => void;
 }
 
-export function RecorderPanel({ projectName, onRecordingSaved }: RecorderPanelProps): ReactElement {
+export function RecorderPanel({
+  projectName,
+  chromiumStatusMessage,
+  onRecordingSaved
+}: RecorderPanelProps): ReactElement {
   const [recording, setRecording] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +63,7 @@ export function RecorderPanel({ projectName, onRecordingSaved }: RecorderPanelPr
 
   const statusClass = recording ? 'recording' : 'idle';
   const statusText = recording ? 'Recording' : 'Ready';
+  const showChromiumStatusMessage = !error && !recording && recordedSteps.length === 0 && chromiumStatusMessage;
 
   return (
     <section className="recorder-panel" aria-label="Recorder">
@@ -152,7 +158,13 @@ export function RecorderPanel({ projectName, onRecordingSaved }: RecorderPanelPr
         </div>
       )}
 
-      {!error && (
+      {showChromiumStatusMessage && (
+        <div className="recorder-footer recorder-footer-error">
+          <span className="recorder-footer-text">{chromiumStatusMessage}</span>
+        </div>
+      )}
+
+      {!error && !showChromiumStatusMessage && (
         <div className="recorder-footer">
           <span className="recorder-footer-text">
             {recording

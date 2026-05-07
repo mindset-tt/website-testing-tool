@@ -8,6 +8,7 @@ export const IPC_CHANNELS = {
   runnerRun: 'runner:run',
   recorderStart: 'recorder:start',
   recorderStop: 'recorder:stop',
+  browserChromiumAvailability: 'browser:chromiumAvailability',
   resultList: 'result:list',
   resultRead: 'result:read'
 } as const;

@@ -869,7 +869,8 @@ select:focus-visible,
 
 .add-step-button,
 .save-steps-button,
-.delete-step-button {
+.delete-step-button,
+.reorder-step-button {
   align-items: center;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -889,6 +890,18 @@ select:focus-visible,
 }
 
 .add-step-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.reorder-step-button {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-primary);
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.reorder-step-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -936,6 +949,13 @@ select:focus-visible,
   display: flex;
   justify-content: space-between;
   margin-bottom: 16px;
+}
+
+.step-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .step-number {

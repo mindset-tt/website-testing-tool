@@ -1,7 +1,7 @@
 {
   "name": "website-testing-tool",
   "version": "0.0.0",
-  "description": "Commercial-grade Windows desktop website testing tool MVP scaffold.",
+  "description": "Windows desktop application for recording, editing, running, and debugging browser-based website tests.",
   "author": {
     "name": "Website Testing Tool Team"
   },
@@ -48,6 +48,7 @@
   "build": {
     "appId": "com.website-testing-tool.app",
     "productName": "Website Testing Tool",
+    "copyright": "Copyright © 2026 Website Testing Tool Team",
     "directories": {
       "output": "dist",
       "buildResources": "resources"

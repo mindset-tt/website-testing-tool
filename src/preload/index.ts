@@ -39,6 +39,12 @@ const api: WebsiteTestingToolApi = {
         Awaited<ReturnType<WebsiteTestingToolApi['runner']['runTestCase']>>
       >
   },
+  browser: {
+    getChromiumAvailability: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.browserChromiumAvailability) as Promise<
+        Awaited<ReturnType<WebsiteTestingToolApi['browser']['getChromiumAvailability']>>
+      >
+  },
   recorder: {
     startRecording: () =>
       ipcRenderer.invoke(IPC_CHANNELS.recorderStart) as Promise<
