@@ -5,6 +5,8 @@ export const IPC_CHANNELS = {
   testCaseList: 'testCase:list',
   testCaseRead: 'testCase:read',
   testCaseSave: 'testCase:save',
+  testCaseDuplicate: 'testCase:duplicate',
+  testCaseDelete: 'testCase:delete',
   runnerRun: 'runner:run',
   recorderStart: 'recorder:start',
   recorderStop: 'recorder:stop',

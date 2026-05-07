@@ -16,6 +16,8 @@ import {
 } from '../src/shared/project-schema';
 import {
   createTestCase,
+  deleteTestCase,
+  duplicateTestCase,
   listTestCases,
   readTestCase,
   saveTestCase
@@ -197,6 +199,55 @@ describe('test case storage', () => {
     expect(updated.schemaVersion).toBe(TEST_CASE_SCHEMA_VERSION);
   });
 
+  it('duplicates a test case with a new test ID, timestamps, and step IDs', async () => {
+    const projectPath = await createTempProjectDir();
+    const created = await createTestCase(projectPath, 'Checkout flow', 'Original description');
+    const saved = await saveTestCase(projectPath, {
+      ...created,
+      steps: [
+        {
+          stepId: createStepId(),
+          type: 'navigate',
+          label: 'Go to homepage',
+          target: 'https://example.com'
+        },
+        {
+          stepId: createStepId(),
+          type: 'click',
+          label: 'Open pricing',
+          target: '[data-testid="pricing-link"]'
+        }
+      ]
+    });
+
+    const duplicated = await duplicateTestCase(projectPath, toTestCaseFileName(saved.testId));
+
+    expect(duplicated.name).toBe('Copy of Checkout flow');
+    expect(duplicated.testId).not.toBe(saved.testId);
+    expect(duplicated.createdAt).not.toBe(saved.createdAt);
+    expect(duplicated.updatedAt).toBe(duplicated.createdAt);
+    expect(duplicated.description).toBe(saved.description);
+    expect(duplicated.steps).toHaveLength(saved.steps.length);
+    expect(duplicated.steps.map((step) => step.stepId)).not.toEqual(saved.steps.map((step) => step.stepId));
+    expect(duplicated.steps.map((step) => step.label)).toEqual(saved.steps.map((step) => step.label));
+
+    const loadedDuplicate = await readTestCase(projectPath, toTestCaseFileName(duplicated.testId));
+
+    expect(loadedDuplicate.testId).toBe(duplicated.testId);
+    expect(loadedDuplicate.name).toBe('Copy of Checkout flow');
+  });
+
+  it('deletes a test case file by file name', async () => {
+    const projectPath = await createTempProjectDir();
+    const created = await createTestCase(projectPath, 'Delete me');
+
+    await deleteTestCase(projectPath, toTestCaseFileName(created.testId));
+
+    const items = await listTestCases(projectPath);
+
+    expect(items).toEqual([]);
+  });
+
   it('returns empty list when tests directory does not exist', async () => {
     const projectPath = await createTempProjectDir();
     const items = await listTestCases(projectPath);
@@ -217,6 +268,22 @@ describe('test case storage', () => {
 
     await expect(
       readTestCase(projectPath, 'not-a-test.json')
+    ).rejects.toThrow();
+  });
+
+  it('rejects path traversal in duplicateTestCase', async () => {
+    const projectPath = await createTempProjectDir();
+
+    await expect(
+      duplicateTestCase(projectPath, '../../etc/passwd.test.json')
+    ).rejects.toThrow();
+  });
+
+  it('rejects path traversal in deleteTestCase', async () => {
+    const projectPath = await createTempProjectDir();
+
+    await expect(
+      deleteTestCase(projectPath, '../../etc/passwd.test.json')
     ).rejects.toThrow();
   });
 

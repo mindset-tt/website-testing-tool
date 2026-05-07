@@ -2,6 +2,8 @@ import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import { join, normalize, relative } from 'node:path';
 
 import {
+  createStepId,
+  createTestId,
   createEmptyTestCase,
   isValidTestCaseFileName,
   TEST_CASE_SCHEMA_VERSION,
@@ -23,13 +25,7 @@ export async function createTestCase(
   await assertProjectPath(projectPath);
 
   const testCase = createEmptyTestCase({ name, description });
-  const testsDir = join(projectPath, 'tests');
-  await mkdir(testsDir, { recursive: true });
-
-  const fileName = toTestCaseFileName(testCase.testId);
-  const filePath = join(testsDir, fileName);
-
-  await writeFile(filePath, `${JSON.stringify(testCase, null, 2)}\n`, 'utf8');
+  await writeTestCaseFile(projectPath, testCase);
 
   return testCase;
 }
@@ -83,18 +79,46 @@ export async function saveTestCase(
     updatedAt: now
   };
 
-  const testsDir = join(projectPath, 'tests');
-  await mkdir(testsDir, { recursive: true });
-
-  const fileName = toTestCaseFileName(updated.testId);
-  assertSafeFileName(fileName);
-
-  const filePath = join(testsDir, fileName);
-  await assertFileWithinProject(projectPath, filePath);
-
-  await writeFile(filePath, `${JSON.stringify(updated, null, 2)}\n`, 'utf8');
+  await writeTestCaseFile(projectPath, updated);
 
   return updated;
+}
+
+/**
+ * Duplicates an existing test case into a new JSON file with a new test ID and timestamps.
+ * Step IDs are regenerated so the duplicate has its own stable step identities.
+ */
+export async function duplicateTestCase(
+  projectPath: string,
+  fileName: string
+): Promise<TestCase> {
+  await assertProjectPath(projectPath);
+  assertSafeFileName(fileName);
+
+  const source = await readTestCase(projectPath, fileName);
+  const now = new Date().toISOString();
+  const duplicate: TestCase = {
+    ...source,
+    schemaVersion: TEST_CASE_SCHEMA_VERSION,
+    testId: createTestId(),
+    name: `Copy of ${source.name}`,
+    createdAt: now,
+    updatedAt: now,
+    steps: source.steps.map((step) => ({
+      ...step,
+      stepId: createStepId()
+    }))
+  };
+
+  const errors = validateTestCase(duplicate);
+
+  if (errors.length > 0) {
+    throw new Error(`Cannot duplicate invalid test case: ${errors.join(' ')}`);
+  }
+
+  await writeTestCaseFile(projectPath, duplicate);
+
+  return duplicate;
 }
 
 /**
@@ -156,6 +180,19 @@ export async function deleteTestCase(
   await assertFileWithinProject(projectPath, filePath);
 
   await unlink(filePath);
+}
+
+async function writeTestCaseFile(projectPath: string, testCase: TestCase): Promise<void> {
+  const testsDir = join(projectPath, 'tests');
+  await mkdir(testsDir, { recursive: true });
+
+  const fileName = toTestCaseFileName(testCase.testId);
+  assertSafeFileName(fileName);
+
+  const filePath = join(testsDir, fileName);
+  await assertFileWithinProject(projectPath, filePath);
+
+  await writeFile(filePath, `${JSON.stringify(testCase, null, 2)}\n`, 'utf8');
 }
 
 function assertSafeFileName(fileName: string): void {

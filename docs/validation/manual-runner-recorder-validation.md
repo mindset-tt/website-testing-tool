@@ -47,6 +47,19 @@ The Electron app window opens with the "Website Testing Tool" shell.
 6. Use **Move Up** or **Move Down** on a step card to confirm the step order changes without losing any field values.
 7. Click **Save** to persist the test case.
 
+## Managing Saved Tests
+
+1. Select a saved test in the suite list.
+2. Click **Rename**, enter a new test name, and click **Save name**.
+3. Confirm the selected test name updates while the test ID, created timestamp, and steps remain unchanged.
+4. Click **Duplicate**.
+5. Confirm a new test named `Copy of <original name>` appears as a separate saved test.
+6. Confirm the duplicate preserves the description and step content while using a new test ID.
+7. Click **Delete** on the duplicate.
+8. Confirm the inline warning appears before deletion completes.
+9. Click **Delete test**.
+10. Confirm the duplicate is removed, the suite list refreshes, and the next available test is selected when one exists.
+
 ## Running a Manual Test
 
 1. Select the test from the test list.
@@ -102,6 +115,9 @@ The path is shown in the run result UI and stored in the result JSON.
 | Create test | `.test.json` file in `tests/` |
 | Edit steps | Steps saved with validation |
 | Reorder steps | Step order changes and all step data stays intact after save |
+| Rename test | Test name changes through save flow, file remains tied to test ID |
+| Duplicate test | New `.test.json` file created with `Copy of <original name>` and a new test ID |
+| Delete test | Inline confirmation appears, file is removed only after confirmation, selection updates safely |
 | Run passing test | Green PASSED badge, result JSON in `results/` |
 | Run failing test | Red FAILED badge, screenshot in `artifacts/screenshots/` |
 | Run test with missing Chromium | Error message tells the user to run `npx playwright install chromium` |

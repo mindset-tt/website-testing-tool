@@ -73,6 +73,9 @@ export function AppShell(): ReactElement {
   const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null);
   const [testCaseError, setTestCaseError] = useState<string | null>(null);
   const [testCasePending, setTestCasePending] = useState(false);
+  const [isRenamingTestCase, setIsRenamingTestCase] = useState(false);
+  const [renameDraft, setRenameDraft] = useState('');
+  const [confirmDeleteTestCase, setConfirmDeleteTestCase] = useState(false);
 
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [runPending, setRunPending] = useState(false);
@@ -81,6 +84,7 @@ export function AppShell(): ReactElement {
 
   const hasProject = currentProject !== null;
   const selectedStepCount = selectedTestCase?.steps.length ?? 0;
+  const renameDraftValue = renameDraft.trim();
   const runBadgeTone = runPending
     ? 'warning'
     : runResult?.status === 'passed'
@@ -121,6 +125,10 @@ export function AppShell(): ReactElement {
     setProjectName(event.target.value);
   };
 
+  const handleRenameDraftChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setRenameDraft(event.target.value);
+  };
+
   const handleCreateProject = async (): Promise<void> => {
     await runProjectAction(() => window.websiteTestingTool.project.createProject({ name: projectName }));
   };
@@ -142,6 +150,9 @@ export function AppShell(): ReactElement {
         setProjectName(result.project.metadata.name);
         setProjectMessage(`Project open: ${result.project.metadata.name}`);
         setSelectedTestCase(null);
+        setRenameDraft('');
+        setIsRenamingTestCase(false);
+        setConfirmDeleteTestCase(false);
         setRunResult(null);
         setRunError(null);
         setActiveSection('tests');
@@ -157,6 +168,34 @@ export function AppShell(): ReactElement {
       setProjectActionPending(false);
     }
   };
+
+  const refreshTestCases = useCallback(async (projectPath: string): Promise<readonly TestCaseListItem[]> => {
+    const result = await window.websiteTestingTool.testCase.listTestCases(projectPath);
+
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+
+    setTestCases(result.items);
+
+    return result.items;
+  }, []);
+
+  const loadTestCase = useCallback(async (projectPath: string, fileName: string): Promise<TestCase | null> => {
+    try {
+      const result = await window.websiteTestingTool.testCase.readTestCase(projectPath, fileName);
+
+      if (result.ok) {
+        return result.testCase;
+      }
+
+      setTestCaseError(result.error);
+    } catch (error) {
+      setTestCaseError(error instanceof Error ? error.message : 'Failed to read test.');
+    }
+
+    return null;
+  }, []);
 
   useEffect(() => {
     if (!currentProject) {
@@ -241,13 +280,11 @@ export function AppShell(): ReactElement {
       );
 
       if (result.ok) {
-        const listResult = await window.websiteTestingTool.testCase.listTestCases(currentProject.projectPath);
-
-        if (listResult.ok) {
-          setTestCases(listResult.items);
-        }
-
+        await refreshTestCases(currentProject.projectPath);
         setSelectedTestCase(result.testCase);
+        setRenameDraft(result.testCase.name);
+        setIsRenamingTestCase(false);
+        setConfirmDeleteTestCase(false);
         setRunResult(null);
         setRunError(null);
         setActiveSection('tests');
@@ -272,22 +309,21 @@ export function AppShell(): ReactElement {
       setTestCaseError(null);
       setRunResult(null);
       setRunError(null);
+      setIsRenamingTestCase(false);
+      setConfirmDeleteTestCase(false);
 
       try {
-        const result = await window.websiteTestingTool.testCase.readTestCase(currentProject.projectPath, fileName);
+        const testCase = await loadTestCase(currentProject.projectPath, fileName);
 
-        if (result.ok) {
-          setSelectedTestCase(result.testCase);
-        } else {
-          setTestCaseError(result.error);
+        if (testCase) {
+          setSelectedTestCase(testCase);
+          setRenameDraft(testCase.name);
         }
-      } catch (error) {
-        setTestCaseError(error instanceof Error ? error.message : 'Failed to read test.');
       } finally {
         setTestCasePending(false);
       }
     },
-    [currentProject]
+    [currentProject, loadTestCase]
   );
 
   const handleRunTest = async (): Promise<void> => {
@@ -316,6 +352,147 @@ export function AppShell(): ReactElement {
       setRunError(error instanceof Error ? error.message : 'Run failed.');
     } finally {
       setRunPending(false);
+    }
+  };
+
+  const handleStartRenameTestCase = (): void => {
+    if (!selectedTestCase) {
+      return;
+    }
+
+    setRenameDraft(selectedTestCase.name);
+    setConfirmDeleteTestCase(false);
+    setIsRenamingTestCase(true);
+  };
+
+  const handleCancelRenameTestCase = (): void => {
+    setRenameDraft(selectedTestCase?.name ?? '');
+    setIsRenamingTestCase(false);
+  };
+
+  const handleRenameTestCase = async (): Promise<void> => {
+    if (!currentProject || !selectedTestCase) {
+      return;
+    }
+
+    if (renameDraftValue.length === 0) {
+      setTestCaseError('Test name is required.');
+      return;
+    }
+
+    if (renameDraftValue === selectedTestCase.name) {
+      setIsRenamingTestCase(false);
+      return;
+    }
+
+    setTestCasePending(true);
+    setProjectMessage(null);
+    setTestCaseError(null);
+
+    try {
+      const result = await window.websiteTestingTool.testCase.saveTestCase(currentProject.projectPath, {
+        ...selectedTestCase,
+        name: renameDraftValue
+      });
+
+      if (result.ok) {
+        setSelectedTestCase(result.testCase);
+        setRenameDraft(result.testCase.name);
+        setIsRenamingTestCase(false);
+        await refreshTestCases(currentProject.projectPath);
+        setProjectMessage(`Test renamed: ${result.testCase.name}`);
+      } else {
+        setTestCaseError(result.error);
+      }
+    } catch (error) {
+      setTestCaseError(error instanceof Error ? error.message : 'Failed to rename test.');
+    } finally {
+      setTestCasePending(false);
+    }
+  };
+
+  const handleDuplicateTestCase = async (): Promise<void> => {
+    if (!currentProject || !selectedTestCase) {
+      return;
+    }
+
+    setTestCasePending(true);
+    setProjectMessage(null);
+    setTestCaseError(null);
+
+    try {
+      const result = await window.websiteTestingTool.testCase.duplicateTestCase(
+        currentProject.projectPath,
+        toTestCaseFileName(selectedTestCase.testId)
+      );
+
+      if (result.ok) {
+        setSelectedTestCase(result.testCase);
+        setRenameDraft(result.testCase.name);
+        setIsRenamingTestCase(false);
+        setConfirmDeleteTestCase(false);
+        await refreshTestCases(currentProject.projectPath);
+        setRunResult(null);
+        setRunError(null);
+        setProjectMessage(`Test duplicated: ${result.testCase.name}`);
+      } else {
+        setTestCaseError(result.error);
+      }
+    } catch (error) {
+      setTestCaseError(error instanceof Error ? error.message : 'Failed to duplicate test.');
+    } finally {
+      setTestCasePending(false);
+    }
+  };
+
+  const handleDeleteTestCase = async (): Promise<void> => {
+    if (!currentProject || !selectedTestCase) {
+      return;
+    }
+
+    const deletedName = selectedTestCase.name;
+    const currentIndex = testCases.findIndex((item) => item.testId === selectedTestCase.testId);
+
+    setTestCasePending(true);
+    setProjectMessage(null);
+    setTestCaseError(null);
+
+    try {
+      const result = await window.websiteTestingTool.testCase.deleteTestCase(
+        currentProject.projectPath,
+        toTestCaseFileName(selectedTestCase.testId)
+      );
+
+      if (!result.ok) {
+        setTestCaseError(result.error);
+        return;
+      }
+
+      const items = await refreshTestCases(currentProject.projectPath);
+      const nextItem = items[currentIndex] ?? items[currentIndex - 1] ?? null;
+
+      if (nextItem) {
+        const nextTestCase = await loadTestCase(
+          currentProject.projectPath,
+          toTestCaseFileName(nextItem.testId)
+        );
+
+        setSelectedTestCase(nextTestCase);
+        setRenameDraft(nextTestCase?.name ?? '');
+      } else {
+        setSelectedTestCase(null);
+        setRenameDraft('');
+      }
+
+      setRunResult(null);
+      setRunError(null);
+      setIsRenamingTestCase(false);
+      setConfirmDeleteTestCase(false);
+      setProjectMessage(`Test deleted: ${deletedName}`);
+    } catch (error) {
+      setTestCaseError(error instanceof Error ? error.message : 'Failed to delete test.');
+    } finally {
+      setTestCasePending(false);
     }
   };
 
@@ -544,6 +721,8 @@ export function AppShell(): ReactElement {
       </aside>
 
       <section className="designer-panel" aria-label="Selected test">
+        {testCaseError && <p className="notice notice-error test-detail-notice">{testCaseError}</p>}
+
         {selectedTestCase ? (
           <article className="test-detail">
             <div className="test-detail-header">
@@ -552,10 +731,108 @@ export function AppShell(): ReactElement {
                 <h2>{selectedTestCase.name}</h2>
                 <p>{selectedTestCase.description || 'No description'}</p>
               </div>
-              <StatusBadge tone={selectedStepCount > 0 ? 'accent' : 'neutral'}>
-                {`${selectedStepCount} step${selectedStepCount !== 1 ? 's' : ''}`}
-              </StatusBadge>
+              <div className="test-detail-controls">
+                <StatusBadge tone={selectedStepCount > 0 ? 'accent' : 'neutral'}>
+                  {`${selectedStepCount} step${selectedStepCount !== 1 ? 's' : ''}`}
+                </StatusBadge>
+                <div className="test-detail-actions">
+                  <button
+                    type="button"
+                    className="button button-secondary compact-button"
+                    disabled={testCasePending}
+                    onClick={handleStartRenameTestCase}
+                  >
+                    Rename
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-secondary compact-button"
+                    disabled={testCasePending}
+                    onClick={() => {
+                      setIsRenamingTestCase(false);
+                      setConfirmDeleteTestCase(false);
+                      void handleDuplicateTestCase();
+                    }}
+                  >
+                    Duplicate
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-danger compact-button"
+                    disabled={testCasePending}
+                    onClick={() => {
+                      setIsRenamingTestCase(false);
+                      setConfirmDeleteTestCase((current) => !current);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
+
+            {isRenamingTestCase && (
+              <form
+                className="test-management-strip"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleRenameTestCase();
+                }}
+              >
+                <label className="test-rename-field">
+                  <span>Test name</span>
+                  <input
+                    type="text"
+                    value={renameDraft}
+                    onChange={handleRenameDraftChange}
+                    disabled={testCasePending}
+                  />
+                </label>
+                <div className="test-management-actions">
+                  <button
+                    type="button"
+                    className="button button-secondary compact-button"
+                    onClick={handleCancelRenameTestCase}
+                    disabled={testCasePending}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="button button-primary compact-button"
+                    disabled={testCasePending || renameDraftValue.length === 0 || renameDraftValue === selectedTestCase.name}
+                  >
+                    Save name
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {confirmDeleteTestCase && (
+              <div className="test-management-strip test-management-strip-danger">
+                <p>Delete this test? This removes its saved JSON file from the project.</p>
+                <div className="test-management-actions">
+                  <button
+                    type="button"
+                    className="button button-secondary compact-button"
+                    onClick={() => setConfirmDeleteTestCase(false)}
+                    disabled={testCasePending}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-danger compact-button"
+                    onClick={() => {
+                      void handleDeleteTestCase();
+                    }}
+                    disabled={testCasePending}
+                  >
+                    Delete test
+                  </button>
+                </div>
+              </div>
+            )}
 
             <dl className="metadata-grid">
               <div>
@@ -573,11 +850,18 @@ export function AppShell(): ReactElement {
             </dl>
 
             <StepEditor
+              key={selectedTestCase.testId}
               testCase={selectedTestCase}
               projectPath={currentProject?.projectPath ?? ''}
               onSaved={(updated) => {
                 setSelectedTestCase(updated);
+                setRenameDraft(updated.name);
                 setProjectMessage(`Test saved: ${updated.name}`);
+                if (currentProject) {
+                  void refreshTestCases(currentProject.projectPath).catch((error: unknown) => {
+                    setTestCaseError(error instanceof Error ? error.message : 'Failed to refresh tests.');
+                  });
+                }
               }}
               onError={(message) => {
                 setTestCaseError(message);

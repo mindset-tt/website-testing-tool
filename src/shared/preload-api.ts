@@ -46,11 +46,22 @@ export type TestCaseListActionResult =
       readonly error: string;
     };
 
+export type TestCaseDeleteActionResult =
+  | {
+      readonly ok: true;
+    }
+  | {
+      readonly ok: false;
+      readonly error: string;
+    };
+
 export interface TestCaseApi {
   readonly createTestCase: (projectPath: string, name: string, description?: string) => Promise<TestCaseActionResult>;
   readonly listTestCases: (projectPath: string) => Promise<TestCaseListActionResult>;
   readonly readTestCase: (projectPath: string, fileName: string) => Promise<TestCaseActionResult>;
   readonly saveTestCase: (projectPath: string, testCase: TestCase) => Promise<TestCaseActionResult>;
+  readonly duplicateTestCase: (projectPath: string, fileName: string) => Promise<TestCaseActionResult>;
+  readonly deleteTestCase: (projectPath: string, fileName: string) => Promise<TestCaseDeleteActionResult>;
 }
 
 export interface ProjectApi {

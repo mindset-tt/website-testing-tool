@@ -307,8 +307,19 @@ button {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.button-danger {
+  background: transparent;
+  border: 1px solid rgba(236, 90, 107, 0.28);
+  color: var(--color-danger-default);
+}
+
+.button-danger:hover:not(:disabled) {
+  background: rgba(236, 90, 107, 0.08);
+}
+
 .button-primary:disabled,
 .button-secondary:disabled,
+.button-danger:disabled,
 .icon-button:disabled,
 .inline-action:disabled {
   background: rgba(255, 255, 255, 0.06);
@@ -475,6 +486,7 @@ select:focus-visible,
 }
 
 .project-name-field input,
+.test-rename-field input,
 .step-field input,
 .step-field select {
   background: rgba(255, 255, 255, 0.04);
@@ -491,6 +503,7 @@ select:focus-visible,
 }
 
 .project-name-field input:focus,
+.test-rename-field input:focus,
 .step-field input:focus,
 .step-field select:focus {
   border-color: var(--color-accent-default);
@@ -772,6 +785,62 @@ select:focus-visible,
 .test-detail-header h2 {
   font-size: 1.2rem;
   margin-top: 4px;
+}
+
+.test-detail-controls {
+  align-items: flex-end;
+  display: grid;
+  gap: 12px;
+  justify-items: end;
+}
+
+.test-detail-actions,
+.test-management-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.test-detail-notice {
+  margin-bottom: 16px;
+}
+
+.test-management-strip {
+  align-items: end;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 18px;
+  padding: 16px;
+}
+
+.test-management-strip-danger {
+  border-color: rgba(236, 90, 107, 0.2);
+}
+
+.test-management-strip-danger p {
+  color: var(--color-text-secondary);
+  font-size: 0.84rem;
+  margin: 0;
+  max-width: 520px;
+}
+
+.test-rename-field {
+  color: var(--color-text-secondary);
+  display: grid;
+  font-size: 0.75rem;
+  font-weight: 700;
+  gap: 6px;
+  min-width: 0;
+}
+
+.test-rename-field input {
+  width: 100%;
 }
 
 .metadata-grid {
@@ -1462,5 +1531,16 @@ select:focus-visible,
   .run-inspector,
   .side-panel {
     min-height: auto;
+  }
+
+  .test-management-strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .test-detail-controls,
+  .test-detail-actions,
+  .test-management-actions {
+    justify-items: start;
+    justify-content: flex-start;
   }
 }

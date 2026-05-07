@@ -40,3 +40,23 @@ The product needs to feel trustworthy, local, fast, and commercially serious for
 - Future UI polish should move toward the documented `docs/ux/product-style-direction.md` direction in small, behavior-preserving passes.
 - Layout discipline, calm surfaces, and diagnostic clarity should be prioritized over decorative visuals.
 - Brand-specific fonts, colors, and signature compositions from reference products should not be copied.
+
+## 2026-05-07: Defer Publisher And Legal Metadata
+
+### Decisions
+
+- Final publisher and legal entity selection is deferred.
+- The current package metadata placeholders (`Website Testing Tool Team`) remain acceptable for MVP development work.
+- Code signing remains deferred.
+- Installer branding and legal review remain deferred.
+- These business and legal decisions do not block MVP feature development.
+
+### Rationale
+
+The current Windows packaging path is working well enough for MVP validation. The unresolved publisher name, legal entity, code signing, and installer-branding review are real commercial release tasks, but they are not prerequisites for continuing local feature development.
+
+### Consequences
+
+- Product capability work should continue instead of waiting on a business/legal decision.
+- Placeholder package metadata must be revisited before code signing, installer branding, or commercial distribution work begins.
+- Future packaging docs and release prep should continue to label the current metadata as placeholder values.

@@ -4,7 +4,7 @@ Last updated: 2026-05-07
 
 ## Status
 
-The MVP architecture is accepted in ADR-0002 and implemented far enough to support packaging validation work. The current effort is validating the Windows delivery path, not changing the chosen architecture.
+The MVP architecture is accepted in ADR-0002 and implemented far enough to support Windows packaging validation plus the core local authoring workflow. The current effort is product capability polish within that accepted architecture, not a stack change.
 
 ## Current Accepted Architecture
 
@@ -26,6 +26,7 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 - The 2026-05-07 portable EXE validation confirmed that when Playwright Chromium is missing, the packaged app opens, shows the Tests and Recorder notes, surfaces user-safe Run and Start Recording errors, avoids raw Playwright stack traces in the normal UI, and stays running.
 - Runtime validation from this Codex Windows shell requires clearing `ELECTRON_RUN_AS_NODE=1` before launching Electron or packaged-app processes.
 - The manual step editor now supports simple step reordering through Move Up / Move Down controls while preserving the existing local storage schema and save flow.
+- The test designer now supports rename, duplicate, and guarded delete actions without changing the project schema, exposing raw filesystem APIs, or renaming test files away from their stable `testId`-derived paths.
 - Windows ARM remains deferred until Playwright ARM64 browser support and real hardware validation are available.
 
 ## Main Risks
@@ -36,4 +37,4 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 
 ## Next Work
 
-Decide the final Windows packaging publisher metadata and then return to the planned shared-shell polish and project-management workflow gaps such as rename/delete.
+Add project-level rename and guarded delete or recovery flows, then continue tightening non-developer diagnostics and shell polish without changing the accepted local-first architecture.

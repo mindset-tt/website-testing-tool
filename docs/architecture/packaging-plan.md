@@ -47,6 +47,12 @@ This document defines the packaging strategy for the Website Testing Tool MVP. I
 | Build resources directory | `resources/` |
 | Windows icon | `resources/icon.ico` generated from local project assets |
 
+Current status:
+
+- Final publisher/legal entity selection is deferred.
+- The placeholder metadata is acceptable for MVP feature development and technical validation.
+- Revisit these values before code signing, installer branding/legal review, or commercial release packaging.
+
 ## 4. Later Target: Windows ARM
 
 | Property | Value |
@@ -115,13 +121,20 @@ Current limitation:
 - For internal/testing distribution, this is acceptable.
 - For commercial release, code signing must be added with an EV certificate.
 
-## 10. Auto-Update — Deferred
+## 10. Publisher And Installer Branding Metadata — Deferred
+
+- Final publisher/legal entity selection is **deferred**.
+- Package `author` and copyright values remain placeholders for now.
+- Installer branding and legal review are also **deferred**.
+- These items are release-preparation work and do **not** block MVP feature development.
+
+## 11. Auto-Update — Deferred
 
 - Auto-update via `electron-updater` is **deferred** for MVP.
 - electron-builder produces update artifacts (`.yml` files, blockmaps) compatible with `electron-updater`.
 - Can be added later without changing the packaging config.
 
-## 11. Installer vs Portable Build Tradeoff
+## 12. Installer vs Portable Build Tradeoff
 
 | Format | Pros | Cons |
 |---|---|---|
@@ -130,7 +143,7 @@ Current limitation:
 
 **MVP decision:** Produce both. Default download is the installer; portable for advanced users.
 
-## 12. electron-builder Configuration
+## 13. electron-builder Configuration
 
 Minimal config in `package.json`:
 
@@ -172,7 +185,7 @@ Minimal config in `package.json`:
 }
 ```
 
-## 13. Icon Asset Requirements
+## 14. Icon Asset Requirements
 
 electron-builder's Windows default is `build/icon.ico`, but this repository overrides `directories.buildResources` to `resources/`. In this project the effective required Windows icon path is therefore `resources/icon.ico`.
 
@@ -187,7 +200,7 @@ Notes:
 - `npm run icon:generate` regenerates `resources/icon.ico` from local project drawing code in `scripts/generate-app-icon.mjs`.
 - Do not add font files to generate the app icon. Keep the source in SVG, PNG, or drawing code that stays local to the repository.
 
-## 14. Package Scripts
+## 15. Package Scripts
 
 Add to `package.json`:
 
@@ -201,7 +214,7 @@ Add to `package.json`:
 }
 ```
 
-## 15. Current Warning Status
+## 16. Current Warning Status
 
 As of 2026-05-07:
 
@@ -212,7 +225,7 @@ As of 2026-05-07:
 - 2026-05-07 follow-up on the same Windows 11 machine: deleting only `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign` allowed electron-builder to rebuild a clean `winCodeSign-2.6.0` cache and restored plain `npm run package:win:portable` success.
 - Current recovery guidance is documented in `docs/troubleshooting/windows-packaging.md`.
 
-## 16. winCodeSign Cache Recovery
+## 17. winCodeSign Cache Recovery
 
 The legacy `winCodeSign` bundle used by electron-builder can surface symlink extraction errors on Windows. On this machine the practical recovery was a targeted cache reset, not a package.json change.
 
@@ -230,7 +243,7 @@ Remove-Item -LiteralPath "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign" 
 npm run package:win:portable
 ```
 
-## 17. Validation Checklist
+## 18. Validation Checklist
 
 ### Pre-validation (Fedora)
 
@@ -267,7 +280,7 @@ npm run package:win:portable
 - [ ] Browser automation works on ARM64
 - [ ] All x64 validation steps pass on ARM64
 
-## 18. Out of Scope for MVP Packaging
+## 19. Out of Scope for MVP Packaging
 
 - Code signing (Authenticode)
 - Auto-update infrastructure

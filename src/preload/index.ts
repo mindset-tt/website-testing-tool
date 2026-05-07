@@ -31,6 +31,14 @@ const api: WebsiteTestingToolApi = {
     saveTestCase: (projectPath, testCase) =>
       ipcRenderer.invoke(IPC_CHANNELS.testCaseSave, projectPath, testCase) as Promise<
         Awaited<ReturnType<WebsiteTestingToolApi['testCase']['saveTestCase']>>
+      >,
+    duplicateTestCase: (projectPath, fileName) =>
+      ipcRenderer.invoke(IPC_CHANNELS.testCaseDuplicate, projectPath, fileName) as Promise<
+        Awaited<ReturnType<WebsiteTestingToolApi['testCase']['duplicateTestCase']>>
+      >,
+    deleteTestCase: (projectPath, fileName) =>
+      ipcRenderer.invoke(IPC_CHANNELS.testCaseDelete, projectPath, fileName) as Promise<
+        Awaited<ReturnType<WebsiteTestingToolApi['testCase']['deleteTestCase']>>
       >
   },
   runner: {
