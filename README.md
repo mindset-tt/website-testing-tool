@@ -2,7 +2,7 @@
 
 Website Testing Tool is the early foundation for a commercial-grade Windows desktop application for website testing. The product is intended to combine browser recording, no-code test creation, visual editing, reliable local execution, and strong failure diagnostics in one professional desktop tool.
 
-The project is currently in the research and planning phase. No implementation code exists yet, dependencies have not been installed, and the final technical stack has not been chosen.
+The project is currently in MVP implementation and Windows validation. The first technical stack has been accepted, dependencies are installed, and the core local prototype workflow is being validated.
 
 ## Who It Is For
 
@@ -42,18 +42,19 @@ Future versions may include:
 ## Current Status
 
 - **MVP workflow implemented:** project create/open, manual step editor, browser recording, test runner, and simple result view.
+- **Shell:** design-md-inspired desktop workbench with a dark enterprise QA surface, focused project, tests, recorder, and results sections, and compact operational panels.
 - **Stack:** Electron + React + TypeScript + Node.js + Playwright (accepted in ADR-0002).
 - **Storage:** Local file-based (JSON) with path traversal protection.
 - **Tests:** 62 unit tests passing.
 - **Packaging:** electron-builder configured for Windows x64 (NSIS installer + portable). See `docs/architecture/packaging-plan.md`.
-- **Next focus:** Windows x64 packaging validation on a real Windows machine.
+- **Next focus:** Interactive Windows x64 workflow validation now that packaging and dev launch are working on Windows.
 
 ## Packaging Status
 
 | Target | Status |
 |---|---|
-| Windows x64 (NSIS installer) | Configured, needs Windows validation |
-| Windows x64 (portable) | Configured, needs Windows validation |
+| Windows x64 (NSIS installer) | Builds successfully on Windows 11 Pro |
+| Windows x64 (portable) | Builds and launches successfully on Windows 11 Pro |
 | Windows ARM64 | Deferred — Playwright ARM64 browser support pending |
 | Code signing | Deferred for MVP |
 | Auto-update | Deferred for MVP |
@@ -61,7 +62,7 @@ Future versions may include:
 ### Build Commands
 
 ```bash
-npm run dev              # Start development server
+npm run dev              # Start development server and Electron app
 npm run build            # Typecheck + production build
 npm run test             # Run 62 unit tests
 npm run package:win      # Build + package for Windows x64
@@ -94,9 +95,9 @@ Key areas:
 - `docs/research/`: market, competitor, and user-pain research notes.
 - `docs/architecture/`: stack evaluation and architecture decision records.
 - `docs/ux/`: UX principles and non-developer workflows.
-- `src/`: future source code after the architecture decision.
-- `tests/`: future test suites after the stack decision.
-- `scripts/`: future automation, build, packaging, and maintenance scripts.
+- `src/`: Electron, React, storage, automation, and shared TypeScript source.
+- `tests/`: unit tests for implemented MVP behavior.
+- `scripts/`: automation, build, packaging, and maintenance scripts.
 
 ## How AI Agents Should Work Here
 
@@ -114,7 +115,14 @@ Agents must not start implementation code until research, MVP scope, and technic
 
 ## Development Environment
 
-Development is currently happening on Fedora Linux.
+Development is currently happening on Fedora Linux, with Windows validation on Windows 11 Pro.
+
+Required local tool versions:
+
+- Node.js `>=22.12.0`.
+- npm `>=10.0.0`.
+
+Node.js v24.15.0/npm 11.12.1 were validated on Windows x64 for dev launch. The Windows dev launch issue was caused by an inherited `ELECTRON_RUN_AS_NODE=1` environment variable, not by Node v24; `npm run dev` clears that variable before invoking `electron-vite dev`.
 
 The final commercial product is intended to target:
 
@@ -138,4 +146,4 @@ npm run build
 
 ## Implementation Warning
 
-Only the Electron + React + TypeScript tooling scaffold exists. Recorder, runner, local project storage, reports, and product workflows have not started yet.
+This is still an MVP prototype. Keep changes aligned with the accepted Electron + React + TypeScript + Node.js + Playwright architecture and avoid adding product features before the next validation task calls for them.

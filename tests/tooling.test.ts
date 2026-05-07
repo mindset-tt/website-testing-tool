@@ -1,6 +1,8 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
-import { navigationItems, workspaceCards } from '../src/renderer/shellModel';
 import {
   createProjectMetadata,
   isSupportedStepType,
@@ -78,18 +80,16 @@ describe('local project schema helpers', () => {
   });
 });
 
-describe('app shell model', () => {
-  it('keeps the required workspace placeholders visible', () => {
-    expect(workspaceCards.map((card) => card.title)).toEqual([
-      'Projects',
-      'Tests',
-      'Recorder',
-      'Results',
-      'Settings'
-    ]);
+describe('app shell', () => {
+  it('renders the desktop workbench shell from the renderer entry point', () => {
+    const appSource = readFileSync(resolve('src/renderer/App.tsx'), 'utf8');
+
+    expect(appSource).toContain('<AppShell />');
   });
 
-  it('keeps navigation aligned with the shell placeholders', () => {
-    expect(navigationItems.map((item) => item.id)).toEqual(workspaceCards.map((card) => card.id));
+  it('does not render the old static placeholder card model', () => {
+    const shellSource = readFileSync(resolve('src/renderer/components/AppShell.tsx'), 'utf8');
+
+    expect(shellSource).not.toContain('workspaceCards');
   });
 });

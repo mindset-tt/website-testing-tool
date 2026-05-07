@@ -62,7 +62,7 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
       </div>
 
       {error && (
-        <p className="project-status error">{error}</p>
+        <p className="notice notice-error">{error}</p>
       )}
 
       {!loading && results.length === 0 && !error && (

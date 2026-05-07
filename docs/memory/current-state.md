@@ -27,7 +27,7 @@ The `website-testing-tool` project has been initialized as a documentation-first
 - Dependencies have been installed through npm.
 - Baseline `typecheck`, `lint`, `test`, and `build` scripts pass.
 - Basic app shell layout and empty states have been created in the React renderer.
-- The renderer now has a left sidebar, top header, main workspace, "No project open" empty state, and placeholder cards for Projects, Tests, Recorder, Results, and Settings.
+- The renderer now has a left sidebar, top header, main workspace, project open/create controls, and focused sidebar sections for Project, Tests, Recorder, and Results.
 - Local project model documentation has been added in `docs/architecture/local-project-model.md`.
 - Shared TypeScript schema types and validators exist for project metadata, test cases, and MVP step types.
 - Minimal local project create/open behavior is wired through Electron main-process dialogs, storage functions, preload-safe IPC, and renderer buttons.
@@ -55,15 +55,23 @@ The `website-testing-tool` project has been initialized as a documentation-first
 - **electron-builder installed** as dev dependency with `build` config in `package.json`. Scripts: `package:win`, `package:win:portable`.
 - **Windows x64 runtime validation started** on actual Windows 11 Pro hardware. `npm run package:win:portable` and `npm run package:win` both successfully produced x64 portable and installer packages.
 - **Portable EXE launch confirmed** successfully on Windows 11 Pro.
+- **Windows dev mode launch fixed**. Root cause was `ELECTRON_RUN_AS_NODE=1` inherited by `electron-vite`, causing the Electron child process to run the app main bundle in Node mode. `npm run dev` now uses `scripts/run-electron-vite-dev.mjs` to clear that inherited variable before invoking `electron-vite dev`.
+- **Windows dev launch validated** on Node.js v24.15.0/npm 11.12.1 with `ELECTRON_RUN_AS_NODE=1` set in the parent shell; Electron stayed running without the previous `Electron uninstall` or `app.whenReady` failure.
+- **Electron reinstall not needed**. `node_modules/electron/dist/electron.exe` exists and resolves correctly.
+- **Node engine metadata tightened** to Node.js `>=22.12.0`, matching the installed Electron/Vite/electron-vite engine requirements. Node v24 was not the dev launch root cause.
 - **README.md updated** with current status, packaging status table, and build commands.
 - **Local validation fixtures created** — `docs/validation/fixtures/basic-form.html` (self-contained form page with stable selectors) and `docs/validation/fixtures/sample-basic-form-test.json` (pre-built test case). `docs/validation/local-fixture-validation.md` explains how to use them.
+- **Workspace shell UX cleanup completed** after Windows dev-mode screenshots showed the app reading like an internal scaffold. Static placeholder cards were removed, sidebar status text now reflects the open project/test count, the fake sidebar now switches between Tests/Recorder/Results, public stack/platform badges were removed, the step editor layout is more compact, and new tests use `Untitled test` names instead of duplicate `Sample test` labels.
+- **Design-md workbench redesign completed** after follow-up UI review rejected the cleaned-up shell as still too scaffold-like. The renderer now follows the supplied `design-md` direction, primarily Linear/Raycast/Stripe/Superhuman patterns: dark enterprise canvas, hairline surface ladder, real lucide icons, compact sidebar navigation, project overview metrics, three-column test designer, focused recorder surface, and denser results panel styling. This changed renderer presentation only; recorder and runner behavior were not changed.
+- **Renderer UI polish pass completed**: spacing, typography, input alignment, button hierarchy, sidebar clarity, step editor readability, recorder workspace hierarchy, and results scannability were refined without changing product behavior.
+- **Redesign validation completed**: `npm run typecheck`, `npm run lint`, `npm run test` (62 tests), `npm run build`, and `npm run dev` smoke all pass on Windows x64. A mocked browser-level renderer sanity pass covered the redesigned test designer, recorder, and results surfaces.
 - No advanced reports, packaging, retries, or parallel execution exists yet.
 - The MVP technical stack has been accepted in ADR-0002.
-- Current phase: Local validation fixtures ready; next is Windows x64 runtime testing.
+- Current phase: Windows x64 packaging, dev launch, and redesigned shell smoke validation are complete; next is hands-on interactive Windows x64 workflow testing.
 
 ## Current Focus
 
-The next focus is to complete interactive Windows x64 workflow validation for project create/open, test creation, step editor, runner, screenshot-on-failure, recorder, and result panel.
+The next focus is to complete fresh hands-on Windows x64 workflow validation against the redesigned shell: project create/open, test creation, step editor, runner, screenshot-on-failure, recorder, and result panel.
 
 ## Important Constraint
 

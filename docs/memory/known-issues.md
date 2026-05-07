@@ -22,16 +22,17 @@ Last updated: 2026-05-07
 - Playwright has an open issue requesting native Windows Arm64 browser bundle support, so Windows ARM browser automation must be validated early.
 - Fedora development is practical for the accepted MVP stack, but Playwright's official Linux system requirements focus on Debian/Ubuntu; Fedora browser dependency setup may need manual documentation.
 - npm latest initially tried Vite 8, but `electron-vite` currently supports Vite 5/6/7. The scaffold is pinned to Vite 7 and `@vitejs/plugin-react` 5; avoid blind Vite major upgrades until compatibility is verified.
-- App shell still contains mostly placeholder UI; only create/open project, test case create/list/read, step editor, runner, and recorder have behavior.
+- App shell has been redesigned from the rejected scaffold UI using `design-md` references, but it still needs hands-on UX validation with real Windows project/test/recorder/result workflows before it can be considered product-grade.
 - Manual step editor is implemented for all 4 MVP step types, but there is no step reordering (drag-and-drop) yet.
 - Browser recording is implemented but selectors are basic (id, data-testid, name, tag+class). No self-healing or smart locator generation yet.
 - Project creation currently chooses a parent folder and creates a generated project folder name; there is no project rename, delete, migration, or recovery flow yet.
 - The renderer test case list uses `toTestCaseFileName` to derive file names from test IDs, which is correct but means the file name is not human-readable.
 - Windows x64 package build succeeds, but installer and portable packaging emit warnings for missing `author` metadata, default Electron icon, and electron-builder shell args deprecation.
-- Interactive Windows x64 workflow validation is still incomplete: project create/open, test creation, step editor, runner, screenshot-on-failure, recorder, and result panel need hands-on confirmation.
+- Dev mode launch on Windows is fixed by clearing inherited `ELECTRON_RUN_AS_NODE` before running `electron-vite dev`; if the failure returns, first verify that script still strips the variable and that `node_modules/electron/dist/electron.exe` exists.
+- Interactive Windows x64 workflow validation is still pending: project create/open, test creation, step editor, runner, screenshot-on-failure, recorder, and result panel need hands-on confirmation.
+- The current UI is now a more serious MVP workbench, not a final commercial design. Further UX work should follow real workflow validation and concrete user workflow pain, not decorative redesign.
 
 ## Current Blockers
 
-- Windows x64 runtime validation is partially complete: package build and portable launch succeeded, but core workflows remain unverified.
 - Windows ARM packaging deferred — Playwright ARM64 browser support pending.
 - No user interview data exists yet.

@@ -184,7 +184,7 @@ export function StepEditor({ testCase, projectPath, onSaved, onError }: StepEdit
                 </select>
               </label>
 
-              <label className="step-field step-field-wide">
+              <label className="step-field step-field-label">
                 <span>Label</span>
                 <input
                   type="text"
@@ -229,7 +229,7 @@ export function StepEditor({ testCase, projectPath, onSaved, onError }: StepEdit
                 />
               </label>
 
-              <label className="step-field step-field-wide">
+              <label className="step-field step-field-notes">
                 <span>Notes</span>
                 <input
                   type="text"

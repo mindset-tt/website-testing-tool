@@ -18,7 +18,6 @@
     "src/automation/**/*.ts",
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
-    "src/renderer/shellModel.ts",
     "src/shared/**/*.ts",
     "src/storage/**/*.ts",
     "tests/**/*.ts"

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
+import { CircleDot, Radio } from 'lucide-react';
 
 import type { TestStep } from '../../shared/project-schema';
 
@@ -77,7 +78,7 @@ export function RecorderPanel({ projectName, onRecordingSaved }: RecorderPanelPr
       <div className="recorder-viewport" aria-label="Browser viewport">
         <div className="recorder-toolbar">
           <div className="recorder-url-bar">
-            <span className="recorder-url-icon" aria-hidden="true">🔒</span>
+            <span className="recorder-url-icon" aria-hidden="true" />
             <span className="recorder-url-text">
               {recording ? 'Recording browser actions…' : 'https://'}
             </span>
@@ -109,26 +110,20 @@ export function RecorderPanel({ projectName, onRecordingSaved }: RecorderPanelPr
           {!recording && recordedSteps.length === 0 && (
             <div className="recorder-placeholder">
               <div className="recorder-placeholder-icon" aria-hidden="true">
-                ◉
+                <CircleDot size={28} strokeWidth={1.8} />
               </div>
-              <p className="recorder-placeholder-title">Browser viewport</p>
-              <p className="recorder-placeholder-text">
-                Click "Start Recording" to launch a browser window.
-                Your clicks, navigation, and form input will be captured as test steps.
-              </p>
+              <p className="recorder-placeholder-title">Browser session</p>
+              <p className="recorder-placeholder-text">Idle. No capture is active.</p>
             </div>
           )}
 
           {recording && (
             <div className="recorder-placeholder">
               <div className="recorder-placeholder-icon recorder-pulse" aria-hidden="true">
-                ●
+                <Radio size={28} strokeWidth={1.8} />
               </div>
-              <p className="recorder-placeholder-title">Recording in progress</p>
-              <p className="recorder-placeholder-text">
-                A browser window is open. Interact with it to record test steps.
-                Click "Stop Recording" when done.
-              </p>
+              <p className="recorder-placeholder-title">Capture active</p>
+              <p className="recorder-placeholder-text">Browser actions are being recorded.</p>
             </div>
           )}
 
@@ -161,10 +156,10 @@ export function RecorderPanel({ projectName, onRecordingSaved }: RecorderPanelPr
         <div className="recorder-footer">
           <span className="recorder-footer-text">
             {recording
-              ? 'Recording browser actions. Close the browser or click Stop when finished.'
+              ? 'Recording browser actions.'
               : recordedSteps.length > 0
-                ? 'Steps saved. Select a test in the Tests section to edit them.'
-                : 'Click Start Recording to launch a browser and capture actions.'}
+                ? 'Captured steps are ready for review.'
+                : 'Recorder idle.'}
           </span>
         </div>
       )}
