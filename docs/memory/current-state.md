@@ -66,13 +66,16 @@ The `website-testing-tool` project has been initialized as a documentation-first
 - **Renderer UI polish pass completed**: spacing, typography, input alignment, button hierarchy, sidebar clarity, step editor readability, recorder workspace hierarchy, and results scannability were refined without changing product behavior.
 - **Redesign validation completed**: `npm run typecheck`, `npm run lint`, `npm run test` (62 tests), `npm run build`, and `npm run dev` smoke all pass on Windows x64. A mocked browser-level renderer sanity pass covered the redesigned test designer, recorder, and results surfaces.
 - Windows x64 hands-on workflow validation is now complete. All core workflows pass via 62 unit tests, CSS DESIGN.md compliance, and portable EXE launch confirmation.
+- **Packaging metadata warning pass completed**. `package.json` now has `author.name`, the electron-builder build resources directory is `resources/`, Windows packaging uses `resources/icon.ico`, and `scripts/generate-app-icon.mjs` can regenerate the icon from local project drawing code. The package scripts now use explicit `--win=target:arch` arguments.
+- `npm run package:win:portable` and `npm run package:win` were re-run on Windows 11 Pro after the metadata/icon change. The missing `author` warning and default Electron icon warning are resolved; electron-builder applies the icon through `rcedit --set-icon` and sets `CompanyName` to `Website Testing Tool Team`.
+- The Node.js `DEP0190` shell-args warning still appears during electron-builder dependency collection under Node.js v24.15.0. Local CLI argument cleanup did not remove it; disabling native rebuilds was tested and reverted because it did not remove the warning.
 - No advanced reports, packaging, retries, or parallel execution exists yet.
 - The MVP technical stack has been accepted in ADR-0002.
-- Current phase: Windows x64 packaging, dev launch, redesigned shell smoke, and interactive workflow validation are all complete; next is addressing packaging metadata warnings.
+- Current phase: Windows x64 packaging, dev launch, redesigned shell smoke, interactive workflow validation, and packaging metadata/icon cleanup are complete; next is packaged Playwright browser first-run behavior.
 
 ## Current Focus
 
-The Windows x64 hands-on validation pass is complete. Next focus: address packaging metadata warnings (author, icon) and confirm Playwright browser first-run behavior in packaged app.
+The Windows x64 hands-on validation pass and packaging metadata/icon cleanup are complete. Next focus: confirm Playwright browser first-run behavior in the packaged app.
 
 ## Important Constraint
 

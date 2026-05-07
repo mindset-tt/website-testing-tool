@@ -46,8 +46,8 @@ Future versions may include:
 - **Stack:** Electron + React + TypeScript + Node.js + Playwright (accepted in ADR-0002).
 - **Storage:** Local file-based (JSON) with path traversal protection.
 - **Tests:** 62 unit tests passing.
-- **Packaging:** electron-builder configured for Windows x64 (NSIS installer + portable). See `docs/architecture/packaging-plan.md`.
-- **Next focus:** Interactive Windows x64 workflow validation now that packaging and dev launch are working on Windows.
+- **Packaging:** electron-builder configured for Windows x64 (NSIS installer + portable) with app metadata and an explicit Windows icon. See `docs/architecture/packaging-plan.md`.
+- **Next focus:** Packaged-app Playwright Chromium first-run behavior.
 
 ## Packaging Status
 
@@ -55,6 +55,7 @@ Future versions may include:
 |---|---|
 | Windows x64 (NSIS installer) | Builds successfully on Windows 11 Pro |
 | Windows x64 (portable) | Builds and launches successfully on Windows 11 Pro |
+| App metadata/icon | Author metadata and custom Windows icon configured; portable package applies both |
 | Windows ARM64 | Deferred — Playwright ARM64 browser support pending |
 | Code signing | Deferred for MVP |
 | Auto-update | Deferred for MVP |
@@ -65,6 +66,7 @@ Future versions may include:
 npm run dev              # Start development server and Electron app
 npm run build            # Typecheck + production build
 npm run test             # Run 62 unit tests
+npm run icon:generate    # Regenerate resources/icon.ico from the local icon script
 npm run package:win      # Build + package for Windows x64
 npm run package:win:portable  # Build + portable Windows x64
 ```

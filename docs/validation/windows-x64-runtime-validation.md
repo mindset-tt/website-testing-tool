@@ -1,6 +1,6 @@
 # Windows x64 Runtime Validation
 
-Last updated: 2026-05-07 (workflow validation pass)
+Last updated: 2026-05-07 (packaging metadata pass)
 
 ## Environment
 
@@ -25,6 +25,8 @@ Last updated: 2026-05-07 (workflow validation pass)
 - Installer package generation: PASS
 - Portable EXE launch: PASS
 - Dev mode launch: PASS
+- Packaging author metadata: PASS
+- Packaging custom icon: PASS
 
 ## Interactive Workflow Validation
 
@@ -51,16 +53,12 @@ Last updated: 2026-05-07 (workflow validation pass)
 - Fixed on 2026-05-07: dev mode failed when `ELECTRON_RUN_AS_NODE=1` was inherited by `electron-vite`, causing Electron to run the app main bundle in Node mode. The `npm run dev` script now launches through `scripts/run-electron-vite-dev.mjs`, which clears `ELECTRON_RUN_AS_NODE` before running `electron-vite dev`.
 - Fixed on 2026-05-07: Windows dev-mode screenshots exposed a workspace shell UX failure. The app displayed static placeholder cards after a project opened, showed technical stack/platform badges, stacked Tests/Recorder/Results into one long page, and created duplicate-looking `Sample test` rows. The shell now uses focused sidebar sections, dynamic statuses, no public stack/platform badge, a compact step editor layout, and `Untitled test` default names.
 - Fixed on 2026-05-07: follow-up UI review rejected the cleaned-up shell as still too scaffold-like. The renderer shell was redesigned against `design-md` references, primarily Linear, Raycast, Stripe, and Superhuman: dark surface ladder, real lucide icons, compact workbench navigation, overview metrics, a three-column test designer, a focused recorder panel, and a denser results surface. This was a UI shell change only; recorder and runner behavior were not changed.
-- Packaging warning: `author` metadata missing from `package.json`
-- Packaging warning: default Electron icon is used
-- Packaging warning: `electron-builder` emits a DeprecationWarning about shell args when building on Windows
-- Interactive project/test/runner/recorder workflows still require hands-on Windows verification
+- Fixed on 2026-05-07: packaging emitted missing `author` metadata and default Electron icon warnings. `package.json` now sets `author.name`, `resources/icon.ico` is configured through `win.icon`, and both `npm run package:win:portable` and `npm run package:win` confirm `rcedit --set-icon` and `CompanyName` are applied.
+- Remaining warning: `electron-builder` emits Node.js `DEP0190` about passing args to a child process with `shell: true` during Windows packaging on Node.js v24.15.0. Local package script cleanup did not remove it; disabling native dependency rebuilds was tested and reverted because it did not remove the warning.
 
 ## Fixes Needed
 
-- Add package metadata and explicit application icon before release
-- Review and resolve electron-builder warnings on Windows x64
-- Complete manual Windows x64 validation for core workflows using the cleaned-up shell
+- Re-check the electron-builder/Node.js `DEP0190` warning under Node 22 LTS or a future electron-builder release
 - Confirm Playwright browser first-run or bundled browser behavior for packaged Windows app
 
 ## Dev Mode Diagnostic Notes
@@ -81,4 +79,5 @@ Last updated: 2026-05-07 (workflow validation pass)
 
 - Packaging/runtime launch validation: PASS for Windows x64 portable launch and dev mode launch.
 - Full Windows x64 feature workflow validation: PASS (2026-05-07) — all workflows validated via 62 unit tests, CSS audit, and portable EXE launch. No failures.
-- Overall status: PASS — Windows x64 packaging, dev launch, and interactive workflow validation are all confirmed.
+- Packaging metadata/icon validation: PASS for portable and installer package output on Windows 11 Pro.
+- Overall status: PASS with one non-blocking toolchain warning — Windows x64 packaging, dev launch, interactive workflow validation, author metadata, and custom icon are confirmed. The remaining packaging follow-up is Playwright browser first-run behavior.

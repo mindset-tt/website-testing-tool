@@ -2,6 +2,9 @@
   "name": "website-testing-tool",
   "version": "0.0.0",
   "description": "Commercial-grade Windows desktop website testing tool MVP scaffold.",
+  "author": {
+    "name": "Website Testing Tool Team"
+  },
   "private": true,
   "main": "out/main/index.js",
   "scripts": {
@@ -10,8 +13,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
-    "package:win": "npm run build && electron-builder --win --x64",
-    "package:win:portable": "npm run build && electron-builder --win portable --x64"
+    "icon:generate": "node scripts/generate-app-icon.mjs",
+    "package:win": "npm run build && electron-builder --win=nsis:x64 --win=portable:x64",
+    "package:win:portable": "npm run build && electron-builder --win=portable:x64"
   },
   "engines": {
     "node": ">=22.12.0",
@@ -45,13 +49,15 @@
     "appId": "com.website-testing-tool.app",
     "productName": "Website Testing Tool",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "resources"
     },
     "files": [
       "out/**/*",
       "package.json"
     ],
     "win": {
+      "icon": "icon.ico",
       "target": [
         {
           "target": "nsis",

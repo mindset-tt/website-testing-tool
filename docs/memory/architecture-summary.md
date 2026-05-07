@@ -8,7 +8,7 @@ Architecture for the MVP is finalized at the planning level.
 
 `docs/architecture/architecture-decision-record.md` contains ADR-0002 with status `accepted`.
 
-Phase A tooling scaffold, Phase B app shell, and the first Phase C local project metadata slice are complete. Product workflow features should stay scoped to the implementation plan phases.
+Phase A tooling scaffold, Phase B app shell, local project/test storage, manual step editing, runner, recorder, simple results, Windows x64 validation, and packaging metadata/icon cleanup are complete. Product workflow features should stay scoped to the implementation plan phases.
 
 ## Current Accepted Architecture
 
@@ -71,4 +71,4 @@ Accepted for MVP in ADR-0002.
 
 ## Next Work
 
-Install Playwright and implement the first minimal runner for manually created steps, following the runner contract.
+Confirm packaged-app Playwright browser first-run behavior, then continue Phase 2 test designer completion with step reordering.

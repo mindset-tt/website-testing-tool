@@ -27,7 +27,8 @@ Last updated: 2026-05-07
 - Browser recording is implemented but selectors are basic (id, data-testid, name, tag+class). No self-healing or smart locator generation yet.
 - Project creation currently chooses a parent folder and creates a generated project folder name; there is no project rename, delete, migration, or recovery flow yet.
 - The renderer test case list uses `toTestCaseFileName` to derive file names from test IDs, which is correct but means the file name is not human-readable.
-- Windows x64 package build succeeds, but installer and portable packaging emit warnings for missing `author` metadata, default Electron icon, and electron-builder shell args deprecation.
+- Windows x64 package build succeeds. Missing `author` metadata and default Electron icon warnings were fixed on 2026-05-07, but electron-builder still emits Node.js `DEP0190` about child-process shell args during dependency collection under Node.js v24.15.0.
+- The current package author is the placeholder `Website Testing Tool Team`; choose the final publisher/legal entity before commercial release, code signing, or installer branding.
 - Dev mode launch on Windows is fixed by clearing inherited `ELECTRON_RUN_AS_NODE` before running `electron-vite dev`; if the failure returns, first verify that script still strips the variable and that `node_modules/electron/dist/electron.exe` exists.
 - Interactive Windows x64 workflow validation is now complete (2026-05-07). All 62 unit tests pass and the redesigned shell passes CSS DESIGN.md compliance. No failures found.
 - The current UI is now a more serious MVP workbench. Further UX work should follow real user feedback, not decorative redesign.

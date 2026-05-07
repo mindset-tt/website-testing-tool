@@ -41,6 +41,10 @@ This document defines the packaging strategy for the Website Testing Tool MVP. I
 | Portable format | Portable `.exe` (single-file, no install) |
 | Output directory | `dist/` |
 | App ID | `com.website-testing-tool.app` |
+| Product name | `Website Testing Tool` |
+| Current author metadata | `Website Testing Tool Team` placeholder until final publisher/legal entity is chosen |
+| Build resources directory | `resources/` |
+| Windows icon | `resources/icon.ico` generated from local project assets |
 
 ## 4. Later Target: Windows ARM
 
@@ -126,17 +130,22 @@ Minimal config in `package.json`:
 
 ```json
 {
+  "author": {
+    "name": "Website Testing Tool Team"
+  },
   "build": {
     "appId": "com.website-testing-tool.app",
     "productName": "Website Testing Tool",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "resources"
     },
     "files": [
       "out/**/*",
       "package.json"
     ],
     "win": {
+      "icon": "icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -163,13 +172,22 @@ Add to `package.json`:
 ```json
 {
   "scripts": {
-    "package:win": "npm run build && electron-builder --win --x64",
-    "package:win:portable": "npm run build && electron-builder --win portable --x64"
+    "icon:generate": "node scripts/generate-app-icon.mjs",
+    "package:win": "npm run build && electron-builder --win=nsis:x64 --win=portable:x64",
+    "package:win:portable": "npm run build && electron-builder --win=portable:x64"
   }
 }
 ```
 
-## 14. Validation Checklist
+## 14. Current Warning Status
+
+As of 2026-05-07, `npm run package:win` and `npm run package:win:portable` on Windows 11 Pro confirm:
+
+- Missing `author` metadata warning: resolved.
+- Default Electron icon warning: resolved; `resources/icon.ico` is applied with `rcedit --set-icon` for the packaged executable.
+- Node.js `DEP0190` shell-args warning: still present under Node.js v24.15.0 during electron-builder dependency collection. Local script argument cleanup did not remove it, and disabling native dependency rebuilds was tested but did not remove it. Treat this as an electron-builder/Node toolchain warning to re-check under Node 22 LTS or a future electron-builder release before commercial release.
+
+## 15. Validation Checklist
 
 ### Pre-validation (Fedora)
 
@@ -178,6 +196,8 @@ Add to `package.json`:
 - [ ] `npm run lint` passes
 - [ ] `npm run test` passes (62 tests)
 - [ ] `electron-builder` installed as dev dependency
+- [ ] `npm run icon:generate` can regenerate `resources/icon.ico`
+- [ ] Package output uses custom icon and author metadata
 
 ### Windows x64 Validation (on Windows machine/VM)
 
@@ -203,7 +223,7 @@ Add to `package.json`:
 - [ ] Browser automation works on ARM64
 - [ ] All x64 validation steps pass on ARM64
 
-## 15. Out of Scope for MVP Packaging
+## 16. Out of Scope for MVP Packaging
 
 - Code signing (Authenticode)
 - Auto-update infrastructure
