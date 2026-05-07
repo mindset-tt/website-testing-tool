@@ -1,0 +1,116 @@
+# Manual Runner & Recorder Validation
+
+Last updated: 2026-05-07
+
+This document describes how to manually validate the runner and recorder features in the current build.
+
+## Prerequisites
+
+- Node.js >= 22.0.0
+- npm >= 10.0.0
+- Playwright with Chromium installed (`npx playwright install chromium`)
+- Fedora Linux (or compatible) development environment
+
+## Starting the App
+
+```bash
+cd website-testing-tool
+npm run dev
+```
+
+The Electron app window opens with the "Website Testing Tool" shell.
+
+## Creating a Project
+
+1. In the "No project open" section, enter a project name (e.g., "Validation Tests").
+2. Click **Create local project**.
+3. Choose a parent folder in the file dialog.
+4. The app creates a project folder with `project.json`, `tests/`, `results/`, `artifacts/`, and `logs/` directories.
+5. The header updates to show the project name and path.
+
+## Creating a Manual Test
+
+1. With a project open, click **New test** in the "Saved Tests" section.
+2. A "Sample test" appears in the test list and is selected.
+3. In the step editor below, click **+ Add step**.
+4. Configure the step:
+   - **Type:** `navigate`
+   - **Label:** `Go to example.com`
+   - **Target:** `https://example.com`
+5. Add another step:
+   - **Type:** `assertText`
+   - **Label:** `Check page heading`
+   - **Target:** `h1`
+   - **Value:** `Example Domain`
+6. Click **Save** to persist the test case.
+
+## Running a Manual Test
+
+1. Select the test from the test list.
+2. Click **Run test**.
+3. The button shows "Running…" while the test executes.
+4. After completion, a result badge appears:
+   - **PASSED** (green) — all steps succeeded
+   - **FAILED** (red) — a step failed
+   - **ERROR** (amber) — browser launch or runner error
+5. Step-level results show each step's status and duration.
+6. Failed steps show the error message.
+
+## Inspecting Run Result JSON
+
+Run results are saved to `{projectPath}/results/run-{runId}.json`.
+
+Example path: `results/run-550e8400-e29b-41d4-a716-446655440000.json`
+
+The JSON contains:
+- `schemaVersion`, `runId`, `testId`, `testName`, `browserName`
+- `status` (`passed` | `failed` | `error`)
+- `startedAt`, `finishedAt`, `durationMs`
+- `stepResults` array with per-step status, timing, and error details
+- `failureScreenshotPath` (relative path, only on failure)
+
+## Inspecting Failure Screenshot Path
+
+When a step fails, a screenshot is saved to:
+`{projectPath}/artifacts/screenshots/run-{runId}/step-{index}-failure.png`
+
+The path is shown in the run result UI and stored in the result JSON.
+
+## Starting Recording
+
+1. With a project open, locate the **Recorder** panel.
+2. Click **Start Recording**.
+3. A Chromium browser window opens (non-headless).
+4. The recorder panel shows a pulsing red dot and "Recording" status.
+
+## Stopping Recording
+
+1. Interact with the browser: navigate to URLs, click elements, fill forms.
+2. Click **Stop Recording** in the recorder panel.
+3. The browser closes.
+4. Recorded steps appear in a preview list showing type, label, and target.
+5. Steps can be saved to a test case via the step editor.
+
+## Expected Results
+
+| Action | Expected |
+|---|---|
+| Create project | `project.json` written, directories created |
+| Create test | `.test.json` file in `tests/` |
+| Edit steps | Steps saved with validation |
+| Run passing test | Green PASSED badge, result JSON in `results/` |
+| Run failing test | Red FAILED badge, screenshot in `artifacts/screenshots/` |
+| Start recording | Chromium window opens, status shows "Recording" |
+| Stop recording | Browser closes, steps preview appears |
+| Stop recording with no browser | Error message shown |
+
+## Known Limitations
+
+- **assertText not captured by recorder:** Must be added manually in the step editor.
+- **Basic selectors only:** Recorder uses id, data-testid, name, or tag+class. No smart locator generation.
+- **No step reordering:** Steps cannot be reordered in the editor (drag-and-drop not implemented).
+- **Single run only:** No concurrent or parallel test execution.
+- **Chromium only:** No Firefox or WebKit support in MVP.
+- **Fedora fallback:** Playwright uses Ubuntu 24.04 fallback build on Fedora.
+- **File names not human-readable:** Test case file names are derived from test IDs (UUID-based).
+- **No project rename/delete:** Projects cannot be renamed or deleted through the UI.

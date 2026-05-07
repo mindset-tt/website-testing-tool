@@ -1,0 +1,226 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  RUN_RESULT_SCHEMA_VERSION,
+  validateRunResult,
+  validateStepResult
+} from '../src/shared/project-schema';
+import type { RunResult, StepResult } from '../src/shared/project-schema';
+
+describe('validateStepResult', () => {
+  it('accepts a valid passed step result', () => {
+    const stepResult: StepResult = {
+      stepId: 'step_abc',
+      stepIndex: 0,
+      type: 'navigate',
+      label: 'Go to homepage',
+      status: 'passed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:02.000Z',
+      durationMs: 2000
+    };
+
+    expect(validateStepResult(stepResult)).toEqual([]);
+  });
+
+  it('accepts a valid failed step result with error and screenshot', () => {
+    const stepResult: StepResult = {
+      stepId: 'step_abc',
+      stepIndex: 1,
+      type: 'click',
+      label: 'Click login',
+      status: 'failed',
+      startedAt: '2026-05-07T10:00:02.000Z',
+      finishedAt: '2026-05-07T10:00:07.000Z',
+      durationMs: 5000,
+      errorMessage: 'Element not found: #login',
+      screenshotPath: 'artifacts/screenshots/run_xyz/step-1-failure.png'
+    };
+
+    expect(validateStepResult(stepResult)).toEqual([]);
+  });
+
+  it('accepts a skipped step result', () => {
+    const stepResult: StepResult = {
+      stepId: 'step_abc',
+      stepIndex: 2,
+      type: 'fill',
+      label: 'Enter email',
+      status: 'skipped',
+      startedAt: '2026-05-07T10:00:07.000Z',
+      finishedAt: '2026-05-07T10:00:07.000Z',
+      durationMs: 0
+    };
+
+    expect(validateStepResult(stepResult)).toEqual([]);
+  });
+
+  it('rejects a step result with invalid status', () => {
+    const stepResult = {
+      stepId: 'step_abc',
+      stepIndex: 0,
+      type: 'navigate',
+      label: 'Go',
+      status: 'unknown',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:02.000Z',
+      durationMs: 2000
+    };
+
+    const errors = validateStepResult(stepResult);
+
+    expect(errors.some((e) => e.includes('status must be one of'))).toBe(true);
+  });
+
+  it('rejects a step result with negative stepIndex', () => {
+    const stepResult: StepResult = {
+      stepId: 'step_abc',
+      stepIndex: -1,
+      type: 'navigate',
+      label: 'Go',
+      status: 'passed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:02.000Z',
+      durationMs: 2000
+    };
+
+    const errors = validateStepResult(stepResult);
+
+    expect(errors.some((e) => e.includes('stepIndex'))).toBe(true);
+  });
+
+  it('rejects a step result with negative durationMs', () => {
+    const stepResult: StepResult = {
+      stepId: 'step_abc',
+      stepIndex: 0,
+      type: 'navigate',
+      label: 'Go',
+      status: 'passed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:02.000Z',
+      durationMs: -1
+    };
+
+    const errors = validateStepResult(stepResult);
+
+    expect(errors.some((e) => e.includes('durationMs'))).toBe(true);
+  });
+});
+
+describe('validateRunResult', () => {
+  it('accepts a valid passed run result', () => {
+    const runResult: RunResult = {
+      schemaVersion: RUN_RESULT_SCHEMA_VERSION,
+      runId: 'run_abc',
+      testId: 'test_xyz',
+      testName: 'Smoke test',
+      browserName: 'chromium',
+      status: 'passed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:10.000Z',
+      durationMs: 10000,
+      stepResults: [
+        {
+          stepId: 'step_1',
+          stepIndex: 0,
+          type: 'navigate',
+          label: 'Go to homepage',
+          status: 'passed',
+          startedAt: '2026-05-07T10:00:00.000Z',
+          finishedAt: '2026-05-07T10:00:05.000Z',
+          durationMs: 5000
+        }
+      ]
+    };
+
+    expect(validateRunResult(runResult)).toEqual([]);
+  });
+
+  it('accepts a valid failed run result with screenshot', () => {
+    const runResult: RunResult = {
+      schemaVersion: RUN_RESULT_SCHEMA_VERSION,
+      runId: 'run_abc',
+      testId: 'test_xyz',
+      testName: 'Smoke test',
+      browserName: 'chromium',
+      status: 'failed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:10.000Z',
+      durationMs: 10000,
+      failureScreenshotPath: 'artifacts/screenshots/run_abc/step-0-failure.png',
+      stepResults: [
+        {
+          stepId: 'step_1',
+          stepIndex: 0,
+          type: 'click',
+          label: 'Click missing button',
+          status: 'failed',
+          startedAt: '2026-05-07T10:00:05.000Z',
+          finishedAt: '2026-05-07T10:00:10.000Z',
+          durationMs: 5000,
+          errorMessage: 'Element not found',
+          screenshotPath: 'artifacts/screenshots/run_abc/step-0-failure.png'
+        }
+      ]
+    };
+
+    expect(validateRunResult(runResult)).toEqual([]);
+  });
+
+  it('rejects a run result with wrong schema version', () => {
+    const runResult = {
+      schemaVersion: 99,
+      runId: 'run_abc',
+      testId: 'test_xyz',
+      testName: 'Test',
+      browserName: 'chromium',
+      status: 'passed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:10.000Z',
+      durationMs: 10000,
+      stepResults: []
+    };
+
+    const errors = validateRunResult(runResult);
+
+    expect(errors.some((e) => e.includes('schemaVersion'))).toBe(true);
+  });
+
+  it('rejects a run result with invalid status', () => {
+    const runResult = {
+      schemaVersion: RUN_RESULT_SCHEMA_VERSION,
+      runId: 'run_abc',
+      testId: 'test_xyz',
+      testName: 'Test',
+      browserName: 'chromium',
+      status: 'unknown',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:10.000Z',
+      durationMs: 10000,
+      stepResults: []
+    };
+
+    const errors = validateRunResult(runResult);
+
+    expect(errors.some((e) => e.includes('status must be one of'))).toBe(true);
+  });
+
+  it('rejects a run result with missing testName', () => {
+    const runResult = {
+      schemaVersion: RUN_RESULT_SCHEMA_VERSION,
+      runId: 'run_abc',
+      testId: 'test_xyz',
+      testName: '',
+      browserName: 'chromium',
+      status: 'passed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:10.000Z',
+      durationMs: 10000,
+      stepResults: []
+    };
+
+    const errors = validateRunResult(runResult);
+
+    expect(errors.some((e) => e.includes('testName'))).toBe(true);
+  });
+});

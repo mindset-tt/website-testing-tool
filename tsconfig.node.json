@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "composite": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": ["node", "electron"]
+  },
+  "include": [
+    "electron.vite.config.ts",
+    "src/automation/**/*.ts",
+    "src/main/**/*.ts",
+    "src/preload/**/*.ts",
+    "src/renderer/shellModel.ts",
+    "src/shared/**/*.ts",
+    "src/storage/**/*.ts",
+    "tests/**/*.ts"
+  ]
+}
