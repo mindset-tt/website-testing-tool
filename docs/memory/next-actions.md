@@ -4,6 +4,7 @@ Last updated: 2026-05-07
 
 ## Priority Order
 
+<<<<<<< HEAD
 1. Confirm the packaged app's Playwright browser install/launch behavior on first run.
 2. Track the remaining electron-builder/Node.js `DEP0190` shell-args warning and re-check under Node 22 LTS or a future electron-builder release before commercial release.
 3. Implement step reordering (Move Up / Move Down first) in the step editor.
@@ -26,4 +27,21 @@ Last updated: 2026-05-07
 - Browser recording is implemented. `Recorder` class launches Chromium.
 - Minimal test runner is implemented in `src/automation/testRunner.ts`.
 - 62 total unit tests are currently passing.
+=======
+1. Obtain Windows x64 hardware or VM access for runtime validation.
+2. Run through the checklist in `docs/validation/windows-x64-runtime-validation.md`.
+3. Record results and fix any issues found.
+4. After Windows x64 validation passes, begin post-MVP improvements (step reordering, smart selectors, etc.).
+5. Run baseline checks: `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build`.
+6. Update docs, memory files, and dated logs.
+
+## Notes
+
+- Windows x64 runtime validation checklist is ready at `docs/validation/windows-x64-runtime-validation.md`.
+- Build-time verification complete: typecheck, lint, 62 tests, build, and packaging all pass from Fedora.
+- Packages produced: NSIS installer (99 MB) and portable EXE (99 MB).
+- Runtime testing requires a Windows x64 machine or VM — not available in current Fedora environment.
+- All MVP phases (A-H) are documented and build-verified.
+- Windows x64 is the first packaging target.
+>>>>>>> d64ab8fafa0b40c00d9b378f51b7c7d35e419738
 - Windows ARM remains a validation risk.

@@ -61,6 +61,7 @@ The `website-testing-tool` project has been initialized as a documentation-first
 - **Node engine metadata tightened** to Node.js `>=22.12.0`, matching the installed Electron/Vite/electron-vite engine requirements. Node v24 was not the dev launch root cause.
 - **README.md updated** with current status, packaging status table, and build commands.
 - **Local validation fixtures created** — `docs/validation/fixtures/basic-form.html` (self-contained form page with stable selectors) and `docs/validation/fixtures/sample-basic-form-test.json` (pre-built test case). `docs/validation/local-fixture-validation.md` explains how to use them.
+<<<<<<< HEAD
 - **Workspace shell UX cleanup completed** after Windows dev-mode screenshots showed the app reading like an internal scaffold. Static placeholder cards were removed, sidebar status text now reflects the open project/test count, the fake sidebar now switches between Tests/Recorder/Results, public stack/platform badges were removed, the step editor layout is more compact, and new tests use `Untitled test` names instead of duplicate `Sample test` labels.
 - **Design-md workbench redesign completed** after follow-up UI review rejected the cleaned-up shell as still too scaffold-like. The renderer now follows the supplied `design-md` direction, primarily Linear/Raycast/Stripe/Superhuman patterns: dark enterprise canvas, hairline surface ladder, real lucide icons, compact sidebar navigation, project overview metrics, three-column test designer, focused recorder surface, and denser results panel styling. This changed renderer presentation only; recorder and runner behavior were not changed.
 - **Renderer UI polish pass completed**: spacing, typography, input alignment, button hierarchy, sidebar clarity, step editor readability, recorder workspace hierarchy, and results scannability were refined without changing product behavior.
@@ -72,6 +73,12 @@ The `website-testing-tool` project has been initialized as a documentation-first
 - No advanced reports, packaging, retries, or parallel execution exists yet.
 - The MVP technical stack has been accepted in ADR-0002.
 - Current phase: Windows x64 packaging, dev launch, redesigned shell smoke, interactive workflow validation, and packaging metadata/icon cleanup are complete; next is packaged Playwright browser first-run behavior.
+=======
+- **Windows x64 runtime validation documented** — `docs/validation/windows-x64-runtime-validation.md` created with full checklist. Build-time verification complete; runtime testing requires Windows hardware.
+- No advanced reports, packaging, retries, or parallel execution exists yet.
+- The MVP technical stack has been accepted in ADR-0002.
+- Current phase: Build verified; Windows x64 runtime testing pending hardware access.
+>>>>>>> d64ab8fafa0b40c00d9b378f51b7c7d35e419738
 
 ## Current Focus
 
