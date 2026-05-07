@@ -209,19 +209,39 @@ As of 2026-05-07:
 - Default Electron icon warning: resolved; `resources/icon.ico` is applied with `rcedit --set-icon` for the packaged executable.
 - Historical Node.js `DEP0190` shell-args warning: previously observed under Node.js `v24.15.0` during electron-builder dependency collection.
 - 2026-05-07 re-check on Node.js `v22.17.1`: the `DEP0190` warning did not reproduce before packaging failed later on a separate `winCodeSign` cache extraction privilege error.
-- Current practical blocker in this workspace: `npm run package:win:portable` can fail if the Windows session cannot create the symlinks contained in electron-builder's downloaded `winCodeSign` cache. This is an environment privilege issue, not a package metadata issue.
+- 2026-05-07 follow-up on the same Windows 11 machine: deleting only `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign` allowed electron-builder to rebuild a clean `winCodeSign-2.6.0` cache and restored plain `npm run package:win:portable` success.
+- Current recovery guidance is documented in `docs/troubleshooting/windows-packaging.md`.
 
-## 16. Validation Checklist
+## 16. winCodeSign Cache Recovery
+
+The legacy `winCodeSign` bundle used by electron-builder can surface symlink extraction errors on Windows. On this machine the practical recovery was a targeted cache reset, not a package.json change.
+
+Recommended recovery order:
+
+1. Remove only `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign`.
+2. Re-run `npm run package:win:portable`.
+3. If the error persists, confirm Developer Mode or retry from an Administrator PowerShell session.
+4. Use a manual `ELECTRON_BUILDER_RCEDIT_PATH` override only as a fallback.
+
+Verified recovery command:
+
+```powershell
+Remove-Item -LiteralPath "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign" -Recurse -Force
+npm run package:win:portable
+```
+
+## 17. Validation Checklist
 
 ### Pre-validation (Fedora)
 
 - [ ] `npm run build` succeeds
 - [ ] `npm run typecheck` passes
 - [ ] `npm run lint` passes
-- [ ] `npm run test` passes (62 tests)
+- [ ] `npm run test` passes (70 tests)
 - [ ] `electron-builder` installed as dev dependency
 - [ ] `npm run icon:generate` can regenerate `resources/icon.ico`
 - [ ] Package output uses custom icon and author metadata
+- [ ] If `winCodeSign` extraction fails, targeted cache reset procedure is documented and verified
 
 ### Windows x64 Validation (on Windows machine/VM)
 
@@ -247,7 +267,7 @@ As of 2026-05-07:
 - [ ] Browser automation works on ARM64
 - [ ] All x64 validation steps pass on ARM64
 
-## 17. Out of Scope for MVP Packaging
+## 18. Out of Scope for MVP Packaging
 
 - Code signing (Authenticode)
 - Auto-update infrastructure
