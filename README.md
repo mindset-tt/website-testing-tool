@@ -41,11 +41,32 @@ Future versions may include:
 
 ## Current Status
 
-- Project initialized.
-- Documentation scaffold created.
-- Source implementation has not started.
-- Current phase: research and planning.
-- Next focus: validate MVP scope and choose a technical architecture.
+- **MVP workflow implemented:** project create/open, manual step editor, browser recording, test runner, and simple result view.
+- **Stack:** Electron + React + TypeScript + Node.js + Playwright (accepted in ADR-0002).
+- **Storage:** Local file-based (JSON) with path traversal protection.
+- **Tests:** 62 unit tests passing.
+- **Packaging:** electron-builder configured for Windows x64 (NSIS installer + portable). See `docs/architecture/packaging-plan.md`.
+- **Next focus:** Windows x64 packaging validation on a real Windows machine.
+
+## Packaging Status
+
+| Target | Status |
+|---|---|
+| Windows x64 (NSIS installer) | Configured, needs Windows validation |
+| Windows x64 (portable) | Configured, needs Windows validation |
+| Windows ARM64 | Deferred — Playwright ARM64 browser support pending |
+| Code signing | Deferred for MVP |
+| Auto-update | Deferred for MVP |
+
+### Build Commands
+
+```bash
+npm run dev              # Start development server
+npm run build            # Typecheck + production build
+npm run test             # Run 62 unit tests
+npm run package:win      # Build + package for Windows x64
+npm run package:win:portable  # Build + portable Windows x64
+```
 
 ## Repository Structure
 

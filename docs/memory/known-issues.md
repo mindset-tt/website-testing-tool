@@ -30,5 +30,6 @@ Last updated: 2026-05-07
 
 ## Current Blockers
 
-- No validated packaging strategy exists for Windows x86/x64 and Windows on ARM.
+- Windows x64 runtime validation requires a Windows machine or VM (packages built successfully from Fedora).
+- Windows ARM packaging deferred — Playwright ARM64 browser support pending.
 - No user interview data exists yet.

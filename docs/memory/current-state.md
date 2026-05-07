@@ -51,13 +51,17 @@ The `website-testing-tool` project has been initialized as a documentation-first
 - **Manual validation document created** at `docs/validation/manual-runner-recorder-validation.md`.
 - **Simple report view implemented** — `ReportPanel` component lists all run results sorted by date, shows pass/fail/error badges, and displays detailed step results with error messages and screenshot paths. `resultStorage.ts` provides `listRunResults` and `readRunResult` helpers.
 - **Result IPC wired** through `result:list` and `result:read` channels in `src/main/resultIpc.ts`, preload bridge, and `ResultApi` type.
+- **Packaging plan documented** in `docs/architecture/packaging-plan.md`. Recommends `electron-builder` for Windows x64 NSIS installer + portable builds. Playwright browsers not bundled. Code signing and auto-update deferred.
+- **electron-builder installed** as dev dependency with `build` config in `package.json`. Scripts: `package:win`, `package:win:portable`.
+- **Packaging validated from Fedora** — `npm run package:win` successfully produced Windows x64 NSIS installer (99 MB) and portable EXE (99 MB). Cross-compilation works without Windows.
+- **README.md updated** with current status, packaging status table, and build commands.
 - No advanced reports, packaging, retries, or parallel execution exists yet.
 - The MVP technical stack has been accepted in ADR-0002.
-- Current phase: Simple report view implemented; ready for packaging validation.
+- Current phase: Packaging validated from Fedora; ready for Windows x64 runtime testing.
 
 ## Current Focus
 
-The next focus is packaging validation (Phase H). The core MVP workflow (project, test editing, recording, running, results) is now implemented.
+The next focus is to validate the Windows x64 packaging on real hardware. The packaging plan and tooling are ready.
 
 ## Important Constraint
 
