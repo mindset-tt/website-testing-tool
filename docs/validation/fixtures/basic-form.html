@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basic Form — Website Testing Tool Fixture</title>
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #1d252d;
+      background: #eef2f5;
+    }
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #d7dfe6;
+      border-radius: 8px;
+      max-width: 480px;
+      padding: 28px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin: 0 0 8px;
+    }
+    p {
+      color: #586878;
+      margin: 0 0 20px;
+    }
+    label {
+      color: #596979;
+      display: block;
+      font-size: 0.84rem;
+      font-weight: 680;
+      margin-bottom: 4px;
+    }
+    input, textarea {
+      background: #ffffff;
+      border: 1px solid #d8e0e7;
+      border-radius: 6px;
+      box-sizing: border-box;
+      color: #1d252d;
+      font: inherit;
+      margin-bottom: 16px;
+      min-height: 38px;
+      padding: 8px 10px;
+      width: 100%;
+    }
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    button {
+      background: #1f3f35;
+      border: 1px solid #1f3f35;
+      border-radius: 6px;
+      color: #ffffff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      min-height: 40px;
+      padding: 8px 20px;
+    }
+    button:hover {
+      background: #2a5447;
+    }
+    #result-message {
+      background: #f0faf4;
+      border: 1px solid #84c39c;
+      border-radius: 6px;
+      color: #143428;
+      display: none;
+      font-weight: 680;
+      margin-top: 16px;
+      padding: 12px 16px;
+    }
+    #result-message.visible {
+      display: block;
+    }
+    .link-row {
+      margin-bottom: 16px;
+    }
+    .link-row a {
+      color: #1f3f35;
+      font-weight: 680;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 data-testid="page-heading">Contact Form</h1>
+    <p data-testid="page-description">
+      Fill in the form below and submit to see a confirmation message.
+    </p>
+
+    <div class="link-row">
+      <a href="#" id="help-link" data-testid="help-link">Need help?</a>
+    </div>
+
+    <label for="name-input">Full name</label>
+    <input
+      type="text"
+      id="name-input"
+      data-testid="name-input"
+      placeholder="e.g. Jane Doe"
+    >
+
+    <label for="email-input">Email address</label>
+    <input
+      type="email"
+      id="email-input"
+      data-testid="email-input"
+      placeholder="e.g. jane@example.com"
+    >
+
+    <label for="message-textarea">Message</label>
+    <textarea
+      id="message-textarea"
+      data-testid="message-textarea"
+      placeholder="Your message…"
+    ></textarea>
+
+    <button
+      type="button"
+      id="submit-button"
+      data-testid="submit-button"
+    >
+      Submit
+    </button>
+
+    <div id="result-message" data-testid="result-message">
+      Thank you for your submission!
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('submit-button').addEventListener('click', function () {
+      var name = document.getElementById('name-input').value.trim();
+      var email = document.getElementById('email-input').value.trim();
+      var message = document.getElementById('message-textarea').value.trim();
+
+      if (!name || !email) {
+        return;
+      }
+
+      var result = document.getElementById('result-message');
+      result.textContent = 'Thank you, ' + name + '! Your message has been received.';
+      result.classList.add('visible');
+    });
+  </script>
+</body>
+</html>

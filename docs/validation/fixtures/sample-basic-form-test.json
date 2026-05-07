@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "testId": "test_sample-basic-form",
+  "name": "Basic form smoke test",
+  "description": "Validates the basic-form.html fixture: fill fields, submit, and assert the confirmation message.",
+  "createdAt": "2026-05-07T10:00:00.000Z",
+  "updatedAt": "2026-05-07T10:00:00.000Z",
+  "steps": [
+    {
+      "stepId": "step_nav",
+      "type": "navigate",
+      "label": "Open basic form fixture",
+      "target": "file:///REPLACE_WITH_YOUR_PATH/docs/validation/fixtures/basic-form.html",
+      "timeoutMs": 10000
+    },
+    {
+      "stepId": "step_fill_name",
+      "type": "fill",
+      "label": "Enter full name",
+      "target": "#name-input",
+      "value": "Jane Doe",
+      "timeoutMs": 5000
+    },
+    {
+      "stepId": "step_fill_email",
+      "type": "fill",
+      "label": "Enter email address",
+      "target": "#email-input",
+      "value": "jane@example.com",
+      "timeoutMs": 5000
+    },
+    {
+      "stepId": "step_fill_message",
+      "type": "fill",
+      "label": "Enter message text",
+      "target": "#message-textarea",
+      "value": "Hello, this is a test message.",
+      "timeoutMs": 5000
+    },
+    {
+      "stepId": "step_click_submit",
+      "type": "click",
+      "label": "Click Submit button",
+      "target": "#submit-button",
+      "timeoutMs": 5000
+    },
+    {
+      "stepId": "step_assert_result",
+      "type": "assertText",
+      "label": "Check confirmation message appears",
+      "target": "#result-message",
+      "value": "Thank you, Jane Doe! Your message has been received.",
+      "timeoutMs": 5000
+    }
+  ]
+}

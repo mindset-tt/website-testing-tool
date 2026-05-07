@@ -55,9 +55,10 @@ The `website-testing-tool` project has been initialized as a documentation-first
 - **electron-builder installed** as dev dependency with `build` config in `package.json`. Scripts: `package:win`, `package:win:portable`.
 - **Packaging validated from Fedora** — `npm run package:win` successfully produced Windows x64 NSIS installer (99 MB) and portable EXE (99 MB). Cross-compilation works without Windows.
 - **README.md updated** with current status, packaging status table, and build commands.
+- **Local validation fixtures created** — `docs/validation/fixtures/basic-form.html` (self-contained form page with stable selectors) and `docs/validation/fixtures/sample-basic-form-test.json` (pre-built test case). `docs/validation/local-fixture-validation.md` explains how to use them.
 - No advanced reports, packaging, retries, or parallel execution exists yet.
 - The MVP technical stack has been accepted in ADR-0002.
-- Current phase: Packaging validated from Fedora; ready for Windows x64 runtime testing.
+- Current phase: Local validation fixtures ready; next is Windows x64 runtime testing.
 
 ## Current Focus
 
