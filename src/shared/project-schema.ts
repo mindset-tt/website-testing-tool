@@ -83,6 +83,16 @@ export interface StepResult {
   readonly screenshotPath?: string;
 }
 
+export interface StepSnapshot {
+  readonly stepId: string;
+  readonly type: StepType;
+  readonly label: string;
+  readonly target?: string;
+  readonly value?: string;
+  readonly timeoutMs?: number;
+  readonly notes?: string;
+}
+
 export interface RunResult {
   readonly schemaVersion: typeof RUN_RESULT_SCHEMA_VERSION;
   readonly runId: string;
@@ -95,6 +105,13 @@ export interface RunResult {
   readonly durationMs: number;
   readonly stepResults: readonly StepResult[];
   readonly failureScreenshotPath?: string;
+  /**
+   * Historical step snapshots captured at run time.
+   * Present for results saved by runner versions that support snapshots.
+   * Absent for older run result files — consumers must fall back to current
+   * test case data when stepSnapshots is undefined.
+   */
+  readonly stepSnapshots?: readonly StepSnapshot[];
 }
 
 export function normalizeProjectName(name: string): string {
@@ -276,6 +293,18 @@ export function validateRunResult(value: unknown): string[] {
     errors.push('Run result failureScreenshotPath must be a string when present.');
   }
 
+  if (value.stepSnapshots !== undefined) {
+    if (!Array.isArray(value.stepSnapshots)) {
+      errors.push('Run result stepSnapshots must be an array when present.');
+    } else {
+      for (const [index, snapshot] of value.stepSnapshots.entries()) {
+        for (const error of validateStepSnapshot(snapshot)) {
+          errors.push(`Step snapshot ${index + 1}: ${error}`);
+        }
+      }
+    }
+  }
+
   return errors;
 }
 
@@ -327,6 +356,53 @@ export function validateStepResult(value: unknown): string[] {
   }
 
   return errors;
+}
+
+export function validateStepSnapshot(value: unknown): string[] {
+  if (!isRecord(value)) {
+    return ['Step snapshot must be an object.'];
+  }
+
+  const errors: string[] = [];
+
+  if (!isNonEmptyString(value.stepId)) {
+    errors.push('stepId must be a non-empty string.');
+  }
+
+  if (!isSupportedStepType(value.type)) {
+    errors.push(`type must be one of: ${SUPPORTED_STEP_TYPES.join(', ')}.`);
+  }
+
+  if (!isNonEmptyString(value.label)) {
+    errors.push('label must be a non-empty string.');
+  }
+
+  for (const key of ['target', 'value', 'notes'] as const) {
+    if (value[key] !== undefined && typeof value[key] !== 'string') {
+      errors.push(`${key} must be a string when present.`);
+    }
+  }
+
+  if (
+    value.timeoutMs !== undefined &&
+    (typeof value.timeoutMs !== 'number' || !Number.isFinite(value.timeoutMs) || value.timeoutMs <= 0)
+  ) {
+    errors.push('timeoutMs must be a positive number when present.');
+  }
+
+  return errors;
+}
+
+export function createStepSnapshot(step: TestStep): StepSnapshot {
+  return {
+    stepId: step.stepId,
+    type: step.type,
+    label: step.label,
+    target: step.target,
+    value: step.value,
+    timeoutMs: step.timeoutMs,
+    notes: step.notes
+  };
 }
 
 export function createTestId(): string {

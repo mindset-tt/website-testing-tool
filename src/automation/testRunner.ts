@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 import type { Browser, Page } from 'playwright';
 
 import type { TestCase, TestStep, RunResult, StepResult, StepStatus } from '../shared/project-schema';
-import { RUN_RESULT_SCHEMA_VERSION, validateRunResult } from '../shared/project-schema';
+import { RUN_RESULT_SCHEMA_VERSION, validateRunResult, createStepSnapshot } from '../shared/project-schema';
 import { assertChromiumAvailable, normalizeChromiumLaunchError } from './playwrightBrowser';
 
 const DEFAULT_TIMEOUT_MS = 30000;
@@ -71,7 +71,8 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
       finishedAt,
       durationMs,
       stepResults,
-      failureScreenshotPath
+      failureScreenshotPath,
+      stepSnapshots: testCase.steps.map(createStepSnapshot)
     };
 
     const errors = validateRunResult(runResult);
@@ -100,7 +101,8 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
       startedAt,
       finishedAt,
       durationMs,
-      stepResults: []
+      stepResults: [],
+      stepSnapshots: testCase.steps.map(createStepSnapshot)
     };
 
     try {

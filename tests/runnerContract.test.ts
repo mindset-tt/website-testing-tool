@@ -3,9 +3,10 @@ import { describe, expect, it } from 'vitest';
 import {
   RUN_RESULT_SCHEMA_VERSION,
   validateRunResult,
-  validateStepResult
+  validateStepResult,
+  validateStepSnapshot
 } from '../src/shared/project-schema';
-import type { RunResult, StepResult } from '../src/shared/project-schema';
+import type { RunResult, StepResult, StepSnapshot } from '../src/shared/project-schema';
 
 describe('validateStepResult', () => {
   it('accepts a valid passed step result', () => {
@@ -222,5 +223,162 @@ describe('validateRunResult', () => {
     const errors = validateRunResult(runResult);
 
     expect(errors.some((e) => e.includes('testName'))).toBe(true);
+  });
+});
+
+describe('validateStepSnapshot', () => {
+  it('accepts a valid step snapshot with all fields', () => {
+    const snapshot: StepSnapshot = {
+      stepId: 'step_abc',
+      type: 'click',
+      label: 'Click login',
+      target: '#login',
+      value: 'submit',
+      timeoutMs: 5000,
+      notes: 'Main login button'
+    };
+
+    expect(validateStepSnapshot(snapshot)).toEqual([]);
+  });
+
+  it('accepts a valid step snapshot with only required fields', () => {
+    const snapshot: StepSnapshot = {
+      stepId: 'step_abc',
+      type: 'navigate',
+      label: 'Go to homepage'
+    };
+
+    expect(validateStepSnapshot(snapshot)).toEqual([]);
+  });
+
+  it('rejects a step snapshot with invalid type', () => {
+    const snapshot = {
+      stepId: 'step_abc',
+      type: 'invalid',
+      label: 'Bad step'
+    };
+
+    const errors = validateStepSnapshot(snapshot);
+
+    expect(errors.some((e) => e.includes('type must be one of'))).toBe(true);
+  });
+
+  it('rejects a step snapshot with missing label', () => {
+    const snapshot = {
+      stepId: 'step_abc',
+      type: 'navigate',
+      label: ''
+    };
+
+    const errors = validateStepSnapshot(snapshot);
+
+    expect(errors.some((e) => e.includes('label'))).toBe(true);
+  });
+
+  it('rejects a step snapshot with negative timeoutMs', () => {
+    const snapshot = {
+      stepId: 'step_abc',
+      type: 'navigate',
+      label: 'Go',
+      timeoutMs: -1
+    };
+
+    const errors = validateStepSnapshot(snapshot);
+
+    expect(errors.some((e) => e.includes('timeoutMs'))).toBe(true);
+  });
+});
+
+describe('validateRunResult with stepSnapshots', () => {
+  it('accepts a run result with valid stepSnapshots', () => {
+    const runResult: RunResult = {
+      schemaVersion: RUN_RESULT_SCHEMA_VERSION,
+      runId: 'run_abc',
+      testId: 'test_xyz',
+      testName: 'Smoke test',
+      browserName: 'chromium',
+      status: 'failed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:10.000Z',
+      durationMs: 10000,
+      stepResults: [
+        {
+          stepId: 'step_1',
+          stepIndex: 0,
+          type: 'click',
+          label: 'Click missing button',
+          status: 'failed',
+          startedAt: '2026-05-07T10:00:05.000Z',
+          finishedAt: '2026-05-07T10:00:10.000Z',
+          durationMs: 5000,
+          errorMessage: 'Element not found'
+        }
+      ],
+      stepSnapshots: [
+        {
+          stepId: 'step_1',
+          type: 'click',
+          label: 'Click missing button',
+          target: '#missing',
+          timeoutMs: 5000
+        }
+      ]
+    };
+
+    expect(validateRunResult(runResult)).toEqual([]);
+  });
+
+  it('accepts a run result without stepSnapshots (old result file)', () => {
+    const runResult: RunResult = {
+      schemaVersion: RUN_RESULT_SCHEMA_VERSION,
+      runId: 'run_abc',
+      testId: 'test_xyz',
+      testName: 'Smoke test',
+      browserName: 'chromium',
+      status: 'passed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:10.000Z',
+      durationMs: 10000,
+      stepResults: [
+        {
+          stepId: 'step_1',
+          stepIndex: 0,
+          type: 'navigate',
+          label: 'Go to homepage',
+          status: 'passed',
+          startedAt: '2026-05-07T10:00:00.000Z',
+          finishedAt: '2026-05-07T10:00:05.000Z',
+          durationMs: 5000
+        }
+      ]
+    };
+
+    expect(validateRunResult(runResult)).toEqual([]);
+  });
+
+  it('rejects a run result with invalid stepSnapshots', () => {
+    const runResult = {
+      schemaVersion: RUN_RESULT_SCHEMA_VERSION,
+      runId: 'run_abc',
+      testId: 'test_xyz',
+      testName: 'Test',
+      browserName: 'chromium',
+      status: 'passed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:10.000Z',
+      durationMs: 10000,
+      stepResults: [],
+      stepSnapshots: [
+        {
+          stepId: 'step_1',
+          type: 'invalid',
+          label: ''
+        }
+      ]
+    };
+
+    const errors = validateRunResult(runResult);
+
+    expect(errors.some((e) => e.includes('Step snapshot'))).toBe(true);
   });
 });

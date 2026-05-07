@@ -1,4 +1,4 @@
-import type { RunResult, StepResult, TestStep } from './project-schema';
+import type { RunResult, StepResult, StepSnapshot, TestStep } from './project-schema';
 
 export interface FailureSummaryOptions {
   readonly stepResult?: StepResult | null;
@@ -11,6 +11,31 @@ export function getPrimaryFailureStep(runResult: RunResult): StepResult | null {
   ) ?? null;
 }
 
+/**
+ * Returns the historical step snapshot for a given step result, if available.
+ * Snapshots are captured at run time and do not drift after test edits.
+ * Returns null for older run result files that do not contain snapshots.
+ */
+export function getStepSnapshotForResult(
+  stepResult: StepResult | null,
+  runResult: RunResult
+): StepSnapshot | null {
+  if (!stepResult || !runResult.stepSnapshots || runResult.stepSnapshots.length === 0) {
+    return null;
+  }
+
+  return (
+    runResult.stepSnapshots.find((s) => s.stepId === stepResult.stepId) ??
+    runResult.stepSnapshots[stepResult.stepIndex] ??
+    null
+  );
+}
+
+/**
+ * Returns the step definition for a given step result.
+ * Prefers historical snapshot data when available (does not drift after test edits).
+ * Falls back to current test case data only for older run results without snapshots.
+ */
 export function getStepDefinitionForResult(
   stepResult: StepResult | null,
   steps: readonly TestStep[] | null | undefined
@@ -34,7 +59,9 @@ export function buildFailureSummary(
   options: FailureSummaryOptions = {}
 ): string {
   const stepResult = options.stepResult ?? getPrimaryFailureStep(runResult);
-  const testStep = options.testStep ?? null;
+  const stepSnapshot = getStepSnapshotForResult(stepResult, runResult);
+  // Fall back to current test case data only for older results without snapshots
+  const testStep = stepSnapshot ? null : (options.testStep ?? null);
   const screenshotPath = getFailureScreenshotPath(runResult, stepResult);
   const errorMessage = stepResult?.errorMessage ?? (
     runResult.status === 'error'
@@ -57,19 +84,33 @@ export function buildFailureSummary(
     `Type: ${stepType}`
   ];
 
-  if (testStep?.target) {
-    lines.push(`Target: ${testStep.target}`);
-  }
+  // Prefer snapshot data (captured at run time, does not drift)
+  if (stepSnapshot) {
+    if (stepSnapshot.target) {
+      lines.push(`Target: ${stepSnapshot.target}`);
+    }
 
-  if (testStep?.value) {
-    lines.push(`${getStepValueLabel(testStep)}: ${testStep.value}`);
-  }
+    if (stepSnapshot.value) {
+      lines.push(`${getSnapshotValueLabel(stepSnapshot)}: ${stepSnapshot.value}`);
+    }
 
-  if (typeof testStep?.timeoutMs === 'number') {
-    lines.push(`Timeout: ${testStep.timeoutMs}ms`);
-  }
+    if (typeof stepSnapshot.timeoutMs === 'number') {
+      lines.push(`Timeout: ${stepSnapshot.timeoutMs}ms`);
+    }
+  } else if (testStep) {
+    // Fallback: reconstruct from current test case (may drift after edits)
+    if (testStep.target) {
+      lines.push(`Target: ${testStep.target}`);
+    }
 
-  if (!testStep && stepResult) {
+    if (testStep.value) {
+      lines.push(`${getStepValueLabel(testStep)}: ${testStep.value}`);
+    }
+
+    if (typeof testStep.timeoutMs === 'number') {
+      lines.push(`Timeout: ${testStep.timeoutMs}ms`);
+    }
+  } else if (stepResult) {
     lines.push('Saved step context: unavailable');
   }
 
@@ -96,6 +137,18 @@ function getStepValueLabel(step: TestStep): string {
   }
 
   if (step.type === 'fill') {
+    return 'Input value';
+  }
+
+  return 'Value';
+}
+
+function getSnapshotValueLabel(snapshot: StepSnapshot): string {
+  if (snapshot.type === 'assertText') {
+    return 'Expected value';
+  }
+
+  if (snapshot.type === 'fill') {
     return 'Input value';
   }
 

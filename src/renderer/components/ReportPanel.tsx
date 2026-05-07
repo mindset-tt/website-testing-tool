@@ -3,12 +3,13 @@ import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import { toTestCaseFileName } from '../../shared/project-schema';
-import type { RunResult, TestCase, TestStep } from '../../shared/project-schema';
+import type { RunResult, StepSnapshot, TestCase, TestStep } from '../../shared/project-schema';
 import {
   buildFailureSummary,
   getFailureScreenshotPath,
   getPrimaryFailureStep,
-  getStepDefinitionForResult
+  getStepDefinitionForResult,
+  getStepSnapshotForResult
 } from '../../shared/resultDiagnostics';
 
 interface ReportPanelProps {
@@ -42,6 +43,18 @@ function getStepValueLabel(step: TestStep): string {
   return 'Value';
 }
 
+function getSnapshotValueLabel(snapshot: StepSnapshot): string {
+  if (snapshot.type === 'assertText') {
+    return 'Expected value';
+  }
+
+  if (snapshot.type === 'fill') {
+    return 'Input value';
+  }
+
+  return 'Value';
+}
+
 export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const [results, setResults] = useState<readonly RunResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,6 +70,7 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const [copyError, setCopyError] = useState<string | null>(null);
 
   const failureStepResult = selectedResult ? getPrimaryFailureStep(selectedResult) : null;
+  const failureStepSnapshot = selectedResult ? getStepSnapshotForResult(failureStepResult, selectedResult) : null;
   const failureTestStep = getStepDefinitionForResult(failureStepResult, selectedTestCase?.steps);
   const failureScreenshotPath = selectedResult ? getFailureScreenshotPath(selectedResult, failureStepResult) : null;
   const failureSummary = selectedResult && selectedResult.status !== 'passed'
@@ -105,6 +119,12 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
     const selectedRun = selectedResult;
 
     if (!selectedRun || selectedRun.status === 'passed') {
+      return;
+    }
+
+    // If the run result already has step snapshots, we don't need to load
+    // the current test case for context — snapshots are historically accurate.
+    if (selectedRun.stepSnapshots && selectedRun.stepSnapshots.length > 0) {
       return;
     }
 
@@ -356,13 +376,39 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
 
                 <section className="report-failure-section" aria-label="Where it failed">
                   <h5>Where did it fail?</h5>
-                  {stepContextLoading && (
+                  {failureStepSnapshot && (
+                    <>
+                      <p className="report-diagnostic-note report-diagnostic-note-snapshot">
+                        Captured at run time
+                      </p>
+                      <dl className="report-diagnostic-grid">
+                        <DiagnosticField
+                          label="Target"
+                          value={failureStepSnapshot.target ?? 'Not recorded'}
+                          mono={Boolean(failureStepSnapshot.target)}
+                        />
+                        {failureStepSnapshot.value && (
+                          <DiagnosticField
+                            label={getSnapshotValueLabel(failureStepSnapshot)}
+                            value={failureStepSnapshot.value}
+                          />
+                        )}
+                        {typeof failureStepSnapshot.timeoutMs === 'number' && (
+                          <DiagnosticField
+                            label="Timeout"
+                            value={`${failureStepSnapshot.timeoutMs}ms`}
+                          />
+                        )}
+                      </dl>
+                    </>
+                  )}
+                  {!failureStepSnapshot && stepContextLoading && (
                     <p className="report-diagnostic-note">Loading saved step details…</p>
                   )}
-                  {!stepContextLoading && stepContextError && (
+                  {!failureStepSnapshot && !stepContextLoading && stepContextError && (
                     <p className="report-diagnostic-note report-diagnostic-note-error">{stepContextError}</p>
                   )}
-                  {!stepContextLoading && !stepContextError && failureTestStep && (
+                  {!failureStepSnapshot && !stepContextLoading && !stepContextError && failureTestStep && (
                     <dl className="report-diagnostic-grid">
                       <DiagnosticField
                         label="Target"
@@ -383,7 +429,7 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
                       )}
                     </dl>
                   )}
-                  {!stepContextLoading && !stepContextError && !failureTestStep && failureStepResult && (
+                  {!failureStepSnapshot && !stepContextLoading && !stepContextError && !failureTestStep && failureStepResult && (
                     <p className="report-diagnostic-note">
                       Saved target and timeout details are unavailable for this result.
                     </p>

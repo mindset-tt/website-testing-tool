@@ -78,6 +78,7 @@ interface RunResult {
   readonly durationMs: number;
   readonly stepResults: readonly StepResult[];
   readonly failureScreenshotPath?: string;  // relative to project root, only on failure
+  readonly stepSnapshots?: readonly StepSnapshot[]; // historical test step data captured at run time
 }
 ```
 
@@ -110,11 +111,25 @@ interface StepResult {
 }
 ```
 
+### `StepSnapshot`
+
+```typescript
+interface StepSnapshot {
+  readonly stepId: string;         // from TestStep
+  readonly type: StepType;         // from TestStep
+  readonly label: string;          // from TestStep
+  readonly target?: string;
+  readonly value?: string;
+  readonly timeoutMs?: number;
+  readonly notes?: string;
+}
+```
+
 MVP note:
 
-- `StepResult` does not currently snapshot `target`, `value`, or `timeoutMs`.
-- The Results UI may reconstruct richer failed-step context from the current saved test case when it still exists.
-- If the user edits a test after a run, those reconstructed details can drift from the exact historical run state.
+- `RunResult` now stores `stepSnapshots` when available.
+- Snapshot data is captured at run time and preserved even if the saved test case changes later.
+- The Results UI prefers snapshot data for target/value/timeout details and falls back to the current test case only for older run results without snapshots.
 
 ### `StepStatus`
 

@@ -5,7 +5,8 @@ import {
   buildFailureSummary,
   getFailureScreenshotPath,
   getPrimaryFailureStep,
-  getStepDefinitionForResult
+  getStepDefinitionForResult,
+  getStepSnapshotForResult
 } from '../src/shared/resultDiagnostics';
 
 const sampleRunResult: RunResult = {
@@ -109,5 +110,127 @@ describe('result diagnostics helpers', () => {
     expect(summary).toContain('Type: Not recorded');
     expect(summary).toContain('Error: No detailed error message was recorded for this run.');
     expect(summary).not.toContain('Screenshot:');
+  });
+});
+
+describe('step snapshot diagnostics', () => {
+  const runResultWithSnapshots: RunResult = {
+    schemaVersion: 1,
+    runId: 'run_snap',
+    testId: 'test_checkout',
+    testName: 'Checkout flow',
+    browserName: 'chromium',
+    status: 'failed',
+    startedAt: '2026-05-07T10:00:00.000Z',
+    finishedAt: '2026-05-07T10:00:05.000Z',
+    durationMs: 5000,
+    stepResults: [
+      {
+        stepId: 'step_1',
+        stepIndex: 0,
+        type: 'navigate',
+        label: 'Open homepage',
+        status: 'passed',
+        startedAt: '2026-05-07T10:00:00.000Z',
+        finishedAt: '2026-05-07T10:00:01.000Z',
+        durationMs: 1000
+      },
+      {
+        stepId: 'step_2',
+        stepIndex: 1,
+        type: 'assertText',
+        label: 'Check confirmation text',
+        status: 'failed',
+        startedAt: '2026-05-07T10:00:01.000Z',
+        finishedAt: '2026-05-07T10:00:05.000Z',
+        durationMs: 4000,
+        errorMessage: 'Expected text "Confirmed" not found.',
+        screenshotPath: 'artifacts/screenshots/run_snap/step-1-failure.png'
+      }
+    ],
+    stepSnapshots: [
+      {
+        stepId: 'step_1',
+        type: 'navigate',
+        label: 'Open homepage',
+        target: 'https://example.com'
+      },
+      {
+        stepId: 'step_2',
+        type: 'assertText',
+        label: 'Check confirmation text',
+        target: '[data-testid="status"]',
+        value: 'Confirmed',
+        timeoutMs: 5000
+      }
+    ]
+  };
+
+  it('returns snapshot for a failed step result when snapshots exist', () => {
+    const failureStep = getPrimaryFailureStep(runResultWithSnapshots);
+    const snapshot = getStepSnapshotForResult(failureStep, runResultWithSnapshots);
+
+    expect(snapshot).not.toBeNull();
+    expect(snapshot?.target).toBe('[data-testid="status"]');
+    expect(snapshot?.value).toBe('Confirmed');
+    expect(snapshot?.timeoutMs).toBe(5000);
+  });
+
+  it('returns null when snapshots are absent (old result file)', () => {
+    const failureStep = getPrimaryFailureStep(sampleRunResult);
+    const snapshot = getStepSnapshotForResult(failureStep, sampleRunResult);
+
+    expect(snapshot).toBeNull();
+  });
+
+  it('returns null when stepResult is null', () => {
+    const snapshot = getStepSnapshotForResult(null, runResultWithSnapshots);
+
+    expect(snapshot).toBeNull();
+  });
+
+  it('failure summary uses snapshot data when available', () => {
+    const summary = buildFailureSummary(runResultWithSnapshots, {
+      stepResult: getPrimaryFailureStep(runResultWithSnapshots),
+      // Pass stale test step data to prove snapshot is preferred
+      testStep: {
+        stepId: 'step_2',
+        type: 'assertText',
+        label: 'EDITED label',
+        target: '[data-testid="edited"]',
+        value: 'EDITED',
+        timeoutMs: 9999
+      }
+    });
+
+    // Should use snapshot data, not the stale testStep
+    expect(summary).toContain('Target: [data-testid="status"]');
+    expect(summary).toContain('Expected value: Confirmed');
+    expect(summary).toContain('Timeout: 5000ms');
+    // Should NOT contain the edited values
+    expect(summary).not.toContain('[data-testid="edited"]');
+    expect(summary).not.toContain('EDITED');
+    expect(summary).not.toContain('9999ms');
+  });
+
+  it('failure summary falls back to testStep when snapshots are absent', () => {
+    const summary = buildFailureSummary(sampleRunResult, {
+      stepResult: getPrimaryFailureStep(sampleRunResult),
+      testStep: sampleSteps[1]
+    });
+
+    // Should use testStep data (fallback for old results)
+    expect(summary).toContain('Target: [data-testid="status"]');
+    expect(summary).toContain('Expected value: Confirmed');
+    expect(summary).toContain('Timeout: 5000ms');
+  });
+
+  it('failure summary shows "unavailable" when neither snapshot nor testStep exists', () => {
+    const summary = buildFailureSummary(sampleRunResult, {
+      stepResult: getPrimaryFailureStep(sampleRunResult),
+      testStep: null
+    });
+
+    expect(summary).toContain('Saved step context: unavailable');
   });
 });

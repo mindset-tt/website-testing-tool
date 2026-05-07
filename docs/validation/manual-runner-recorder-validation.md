@@ -108,6 +108,7 @@ The JSON contains:
 - `startedAt`, `finishedAt`, `durationMs`
 - `stepResults` array with per-step status, timing, and error details
 - `failureScreenshotPath` (relative path, only on failure)
+- `stepSnapshots` array with targeted historical step details for older run result diagnostics
 
 ## Inspecting Failure Screenshot Path
 

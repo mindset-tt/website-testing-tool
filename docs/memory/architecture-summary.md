@@ -27,7 +27,7 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 - Runtime validation from this Codex Windows shell requires clearing `ELECTRON_RUN_AS_NODE=1` before launching Electron or packaged-app processes.
 - The Results panel now previews failure screenshots through a validated preload/main-process bridge that only allows `.png` files inside the selected project's `artifacts/screenshots` directory.
 - The Results panel now also renders a compact failed-step summary and can copy a plain-text failure summary for failed and error runs by using the browser clipboard API from the renderer.
-- Because `RunResult` does not yet snapshot target, value, or timeout, the Results panel currently reconstructs those fields from the current saved test case when available.
+- Run results now capture historical `stepSnapshots`, preserving the exact step target, value, timeout, and notes at run time while still falling back safely for older results.
 - Project metadata rename now updates only `project.json` `name` and `updatedAt`, preserving the stable `projectId`, `createdAt`, and folder path.
 - Recent projects are now cached outside project folders in Electron `userData` as `recent-projects.json`, with a small deduplicated quick-open list for the no-project startup state.
 - The no-project startup state now supports a non-destructive forget action for recent-project entries. It removes only the matching cache entry by project path and does not touch project folders or project metadata.

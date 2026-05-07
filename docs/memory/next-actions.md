@@ -4,7 +4,7 @@ Last updated: 2026-05-07
 
 ## Priority Order
 
-1. Continue runner/results failure diagnostics by stabilizing historical failed-step context so target, value, and timeout details do not drift after later test edits.
+1. Continue runner/results evidence and diagnostics work now that historical failed-step context is stable.
 2. Continue recorder/runner hardening after the diagnostic improvements above are complete.
 3. Apply the new `Local QA Workbench` direction incrementally to shared renderer surfaces without changing product behavior.
 4. Revisit broader project recovery or migration flows only after failure diagnostics and workflow clarity improve.
