@@ -115,6 +115,9 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportedReportPath, setExportedReportPath] = useState<string | null>(null);
+  const [exportingJunitReport, setExportingJunitReport] = useState(false);
+  const [junitExportMessage, setJunitExportMessage] = useState<string | null>(null);
+  const [junitExportError, setJunitExportError] = useState<string | null>(null);
   const [reportActionMessage, setReportActionMessage] = useState<string | null>(null);
   const [reportActionError, setReportActionError] = useState<string | null>(null);
   const [openingReport, setOpeningReport] = useState(false);
@@ -284,6 +287,9 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
     setExportMessage(null);
     setExportError(null);
     setExportedReportPath(null);
+    setExportingJunitReport(false);
+    setJunitExportMessage(null);
+    setJunitExportError(null);
     setReportActionMessage(null);
     setReportActionError(null);
     setOpeningReport(false);
@@ -336,6 +342,33 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
       setExportError(error instanceof Error ? error.message : 'HTML report export failed.');
     } finally {
       setExportingReport(false);
+    }
+  };
+
+  const handleExportJunitReport = async (): Promise<void> => {
+    if (!selectedResult) {
+      return;
+    }
+
+    setExportingJunitReport(true);
+    setJunitExportMessage(null);
+    setJunitExportError(null);
+    setReportActionMessage(null);
+    setReportActionError(null);
+
+    try {
+      const result = await window.websiteTestingTool.result.exportRunJunitReport(projectPath, selectedResult.runId);
+
+      if (result.ok) {
+        setExportedReportPath(result.reportPath);
+        setJunitExportMessage(`JUnit XML exported to ${result.reportPath}.`);
+      } else {
+        setJunitExportError(result.error);
+      }
+    } catch (error) {
+      setJunitExportError(error instanceof Error ? error.message : 'JUnit XML export failed.');
+    } finally {
+      setExportingJunitReport(false);
     }
   };
 
@@ -446,16 +479,35 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
                 <FileText size={15} />
                 {exportingReport ? 'Exporting…' : 'Export HTML report'}
               </button>
+              <button
+                type="button"
+                className="button button-secondary compact-button"
+                disabled={exportingJunitReport}
+                onClick={() => {
+                  void handleExportJunitReport();
+                }}
+              >
+                <FileText size={15} />
+                {exportingJunitReport ? 'Exporting…' : 'Export JUnit XML'}
+              </button>
             </div>
           </div>
 
-          {(exportMessage || exportError) && (
+          {(exportMessage || exportError || junitExportMessage || junitExportError) && (
             <div className="report-export-section">
-              <p className={exportError ? 'notice notice-error report-export-notice' : 'notice report-export-notice'}>
-                {exportError ?? exportMessage}
-              </p>
+              {(exportMessage || exportError) && (
+                <p className={exportError ? 'notice notice-error report-export-notice' : 'notice report-export-notice'}>
+                  {exportError ?? exportMessage}
+                </p>
+              )}
 
-              {exportedReportPath && !exportError && (
+              {(junitExportMessage || junitExportError) && (
+                <p className={junitExportError ? 'notice notice-error report-export-notice' : 'notice report-export-notice'}>
+                  {junitExportError ?? junitExportMessage}
+                </p>
+              )}
+
+              {exportedReportPath && !exportError && !junitExportError && (
                 <div className="report-export-actions">
                   <button
                     type="button"

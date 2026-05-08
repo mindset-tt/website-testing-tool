@@ -25,7 +25,7 @@ project-folder/
 │  ├─ videos/
 │  └─ traces/
 ├─ logs/
-└─ reports/   (created on first HTML export)
+└─ reports/   (created on first HTML or JUnit export)
 ```
 
 ## MVP Creation Behavior
@@ -64,6 +64,8 @@ This cache is app state, not project schema. It should not be copied into projec
 
 - HTML run reports are exported on demand under `reports/`.
 - Example path: `reports/report-run_550e8400-e29b-41d4-a716-446655440000.html`
+- JUnit XML reports are also exported on demand under `reports/`.
+- Example path: `reports/junit-run_550e8400-e29b-41d4-a716-446655440000.xml`
 - The `reports/` directory is not required at project creation time. It is created only when a user exports a saved run result.
 - Export writes must stay inside the selected project folder. The renderer must not choose an arbitrary output path.
 

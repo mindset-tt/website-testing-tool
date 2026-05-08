@@ -19,6 +19,7 @@ export const IPC_CHANNELS = {
   resultRead: 'result:read',
   resultReadFailureScreenshot: 'result:readFailureScreenshot',
   resultExportHtmlReport: 'result:exportHtmlReport',
+  resultExportJunitReport: 'result:exportJunitReport',
   resultOpenExportedReport: 'result:openExportedReport',
   resultRevealExportedReport: 'result:revealExportedReport'
 } as const;

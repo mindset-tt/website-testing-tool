@@ -4,6 +4,7 @@ import { basename, dirname, extname, isAbsolute, join, normalize, relative, reso
 import type { RunResult } from '../shared/project-schema';
 import { PROJECT_DIRECTORY_NAMES, validateRunResult } from '../shared/project-schema';
 import { renderRunHtmlReport } from '../shared/htmlReport';
+import { renderRunJunitReport } from '../shared/junitReport';
 
 const RUN_RESULT_FILE_PREFIX = 'run-';
 const RUN_RESULT_FILE_SUFFIX = '.json';
@@ -11,6 +12,8 @@ const FAILURE_SCREENSHOT_EXTENSION = '.png';
 const REPORTS_DIRECTORY_NAME = 'reports';
 const HTML_REPORT_FILE_PREFIX = 'report-';
 const HTML_REPORT_FILE_SUFFIX = '.html';
+const JUNIT_REPORT_FILE_PREFIX = 'junit-';
+const JUNIT_REPORT_FILE_SUFFIX = '.xml';
 const RUN_ID_PATTERN = /^run_[a-z0-9_-]+$/i;
 
 export async function listRunResults(projectPath: string): Promise<readonly RunResult[]> {
@@ -103,6 +106,29 @@ export async function exportRunHtmlReport(
 
   return {
     reportPath: getRunHtmlReportRelativePath(normalizedRunId)
+  };
+}
+
+export async function exportRunJunitReport(
+  projectPath: string,
+  runId: string
+): Promise<{ readonly reportPath: string }> {
+  const normalizedProjectPath = normalizeProjectPath(projectPath);
+  const normalizedRunId = normalizeRunId(runId);
+  const runResult = await readRunResult(normalizedProjectPath, normalizedRunId);
+  const reportPath = resolveRunJunitReportPath(normalizedProjectPath, normalizedRunId);
+  const reportDirectoryPath = resolve(normalizedProjectPath, REPORTS_DIRECTORY_NAME);
+  const reportXml = renderRunJunitReport(runResult);
+
+  try {
+    await mkdir(reportDirectoryPath, { recursive: true });
+    await writeFile(reportPath, reportXml, 'utf8');
+  } catch (error) {
+    throw new Error('JUnit report could not be written.', { cause: error });
+  }
+
+  return {
+    reportPath: getRunJunitReportRelativePath(normalizedRunId)
   };
 }
 
@@ -277,6 +303,28 @@ function normalizeRunId(runId: string): string {
 
 function getRunHtmlReportRelativePath(runId: string): string {
   return join(REPORTS_DIRECTORY_NAME, `${HTML_REPORT_FILE_PREFIX}${runId}${HTML_REPORT_FILE_SUFFIX}`);
+}
+
+export function resolveRunJunitReportPath(projectPath: string, runId: string): string {
+  const normalizedProjectPath = normalizeProjectPath(projectPath);
+  const normalizedRunId = normalizeRunId(runId);
+  const reportsDirectory = resolve(normalizedProjectPath, REPORTS_DIRECTORY_NAME);
+  const resolvedReportPath = resolve(normalizedProjectPath, getRunJunitReportRelativePath(normalizedRunId));
+  const relativeToReports = relative(reportsDirectory, resolvedReportPath);
+
+  if (
+    relativeToReports.length === 0 ||
+    relativeToReports.startsWith('..') ||
+    isAbsolute(relativeToReports)
+  ) {
+    throw new Error('JUnit report path must stay inside the project reports folder.');
+  }
+
+  return resolvedReportPath;
+}
+
+function getRunJunitReportRelativePath(runId: string): string {
+  return join(REPORTS_DIRECTORY_NAME, `${JUNIT_REPORT_FILE_PREFIX}${runId}${JUNIT_REPORT_FILE_SUFFIX}`);
 }
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {

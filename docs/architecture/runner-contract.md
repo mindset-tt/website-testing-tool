@@ -249,6 +249,7 @@ Example: `artifacts/screenshots/run_abc123/step-2-failure.png`
 - Browser console messages, page errors, network failures, and HTTP errors are stored directly inside the `RunResult` JSON and are not written to separate files in MVP.
 - Evidence storage is capped to keep runs compact: currently 100 console messages, 50 page errors, 50 network failures, and 50 HTTP errors.
 - Saved run results can be exported later to `{projectPath}/reports/report-{runId}.html` through a separate results workflow. Runner execution itself does not write HTML reports.
+- Saved run results can also be exported as JUnit XML to `{projectPath}/reports/junit-{runId}.xml` through the same results workflow. The JUnit report maps each step result to a `<testcase>` element with `<failure>`, `<error>`, or `<skipped>` children, and includes run metadata plus browser evidence counts in `<system-out>`.
 
 ## 7. Runner Lifecycle
 
@@ -334,7 +335,6 @@ The main process handler will:
 - Authentication state management.
 - Environment variables in steps.
 - CI/CD integration.
-- JUnit export.
 - Step reordering during run.
 - Conditional steps or control flow.
 

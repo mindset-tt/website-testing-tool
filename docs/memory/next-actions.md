@@ -28,6 +28,7 @@ Last updated: 2026-05-08
 - Failed and error runs now show a copyable failure summary, and the summary now includes browser evidence counts without dumping raw logs.
 - Run results now capture capped browser console messages, page errors, request failures, and compact HTTP errors, and the Results panel now surfaces them in a compact Browser evidence section when present.
 - Selected saved runs can now be exported as standalone HTML reports under `reports/` through a main-process path that validates run IDs and keeps writes inside the current project.
+- Selected saved runs can now also be exported as JUnit XML reports under `reports/` for CI/CD consumption. Each step maps to a `<testcase>` with appropriate `<failure>`, `<error>`, or `<skipped>` elements, and `<system-out>` includes run metadata and browser evidence counts.
 - Step reordering is now implemented in the manual step editor with simple Move Up / Move Down controls. No drag-and-drop library was added.
 - Test rename, duplicate, and guarded delete are now implemented in the Tests workspace. Rename stays on the existing `saveTestCase` path, duplicates get a new `testId` and fresh step IDs, and delete uses inline confirmation before file removal.
 - `docs/ux/product-style-direction.md` defines the chosen product direction: a Linear-led `Local QA Workbench` blend with Cursor, Raycast, Sentry, and Stripe as secondary references.

@@ -201,6 +201,7 @@ export interface ResultApi {
     screenshotPath: string
   ) => Promise<FailureScreenshotReadActionResult>;
   readonly exportRunHtmlReport: (projectPath: string, runId: string) => Promise<ResultExportActionResult>;
+  readonly exportRunJunitReport: (projectPath: string, runId: string) => Promise<ResultExportActionResult>;
   readonly openExportedReport: (projectPath: string, reportPath: string) => Promise<ResultExportActionResult>;
   readonly revealExportedReport: (projectPath: string, reportPath: string) => Promise<ResultExportActionResult>;
 }

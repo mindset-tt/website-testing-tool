@@ -9,6 +9,7 @@ import type {
 } from '../shared/preload-api';
 import {
   exportRunHtmlReport,
+  exportRunJunitReport,
   listRunResults,
   readFailureScreenshot,
   readRunResult,
@@ -92,6 +93,30 @@ export function registerResultIpc(): void {
 
       try {
         const exported = await exportRunHtmlReport(projectPath.trim(), runId.trim());
+
+        return {
+          ok: true,
+          reportPath: exported.reportPath
+        };
+      } catch (error) {
+        return { ok: false, error: getErrorMessage(error) };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.resultExportJunitReport,
+    async (_event, projectPath: unknown, runId: unknown): Promise<ResultExportActionResult> => {
+      if (typeof projectPath !== 'string' || projectPath.trim().length === 0) {
+        return { ok: false, error: 'Project path is required.' };
+      }
+
+      if (typeof runId !== 'string' || runId.trim().length === 0) {
+        return { ok: false, error: 'Run ID is required.' };
+      }
+
+      try {
+        const exported = await exportRunJunitReport(projectPath.trim(), runId.trim());
 
         return {
           ok: true,
