@@ -26,8 +26,9 @@ import type {
   RecentProjectItem,
   TestCaseListItem
 } from '../../shared/preload-api';
-import type { RunResult, TestCase } from '../../shared/project-schema';
+import type { RunResult, TestCase, TestStep } from '../../shared/project-schema';
 import { toTestCaseFileName } from '../../shared/project-schema';
+import { generateRecordedTestName, normalizeRecordedSteps } from '../../shared/recordedSteps';
 import { RecorderPanel } from './RecorderPanel';
 import { ReportPanel } from './ReportPanel';
 import { StepEditor } from './StepEditor';
@@ -443,6 +444,101 @@ export function AppShell(): ReactElement {
     } finally {
       setRunPending(false);
     }
+  };
+
+  const handleSaveRecordedAsNewTest = async (steps: readonly TestStep[]): Promise<void> => {
+    if (!currentProject) {
+      throw new Error('No project is open.');
+    }
+
+    const normalizedSteps = normalizeRecordedSteps(steps);
+    const name = generateRecordedTestName();
+
+    const result = await window.websiteTestingTool.testCase.createTestCase(
+      currentProject.projectPath,
+      name,
+      ''
+    );
+
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+
+    const testWithSteps: TestCase = {
+      ...result.testCase,
+      steps: normalizedSteps
+    };
+
+    const saveResult = await window.websiteTestingTool.testCase.saveTestCase(
+      currentProject.projectPath,
+      testWithSteps
+    );
+
+    if (!saveResult.ok) {
+      throw new Error(saveResult.error);
+    }
+
+    setSelectedTestCase(saveResult.testCase);
+    setRenameDraft(saveResult.testCase.name);
+    setIsRenamingTestCase(false);
+    setConfirmDeleteTestCase(false);
+    setRunResult(null);
+    setRunError(null);
+    await refreshTestCases(currentProject.projectPath);
+    setActiveSection('tests');
+    setProjectMessage(`Test created from recording: ${saveResult.testCase.name}`);
+  };
+
+  const handleAppendRecordedToTest = async (steps: readonly TestStep[]): Promise<void> => {
+    if (!currentProject || !selectedTestCase) {
+      throw new Error('No test is selected.');
+    }
+
+    const normalizedSteps = normalizeRecordedSteps(steps);
+    const updated: TestCase = {
+      ...selectedTestCase,
+      steps: [...selectedTestCase.steps, ...normalizedSteps]
+    };
+
+    const result = await window.websiteTestingTool.testCase.saveTestCase(
+      currentProject.projectPath,
+      updated
+    );
+
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+
+    setSelectedTestCase(result.testCase);
+    setRenameDraft(result.testCase.name);
+    await refreshTestCases(currentProject.projectPath);
+    setProjectMessage(`Steps appended to "${result.testCase.name}".`);
+  };
+
+  const handleReplaceRecordedSteps = async (steps: readonly TestStep[]): Promise<void> => {
+    if (!currentProject || !selectedTestCase) {
+      throw new Error('No test is selected.');
+    }
+
+    const normalizedSteps = normalizeRecordedSteps(steps);
+    const updated: TestCase = {
+      ...selectedTestCase,
+      steps: normalizedSteps
+    };
+
+    const result = await window.websiteTestingTool.testCase.saveTestCase(
+      currentProject.projectPath,
+      updated
+    );
+
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+
+    setSelectedTestCase(result.testCase);
+    setRenameDraft(result.testCase.name);
+    await refreshTestCases(currentProject.projectPath);
+    setProjectMessage(`Steps replaced in "${result.testCase.name}".`);
   };
 
   const handleStartRenameProject = (): void => {
@@ -1222,9 +1318,14 @@ export function AppShell(): ReactElement {
         <RecorderPanel
           projectName={currentProject.metadata.name}
           chromiumStatusMessage={chromiumStatusMessage}
+          selectedTestName={selectedTestCase?.name ?? null}
+          hasSelectedTest={selectedTestCase !== null}
           onRecordingSaved={(steps) => {
             setProjectMessage(`Recording saved: ${steps.length} step${steps.length !== 1 ? 's' : ''}`);
           }}
+          onSaveAsNewTest={handleSaveRecordedAsNewTest}
+          onAppendToTest={handleAppendRecordedToTest}
+          onReplaceTestSteps={handleReplaceRecordedSteps}
         />
       );
     }

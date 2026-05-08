@@ -1465,6 +1465,42 @@ select:focus-visible,
   padding: 4px 9px;
 }
 
+.recorder-save-actions {
+  border-top: 1px solid var(--color-border-default);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.recorder-save-label {
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.recorder-save-buttons {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recorder-replace-confirm {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recorder-replace-confirm span {
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+}
+
+.recorder-save-notice {
+  margin-top: 12px;
+}
+
 .report-panel {
   min-height: 520px;
 }

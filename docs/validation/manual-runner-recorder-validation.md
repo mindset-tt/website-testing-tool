@@ -183,7 +183,41 @@ The path is shown in the run result UI and stored in the result JSON.
 2. Click **Stop Recording** in the recorder panel.
 3. The browser closes.
 4. Recorded steps appear in a preview list showing type, label, and target.
-5. Steps can be saved to a test case via the step editor.
+5. Save options appear below the preview list.
+
+## Saving Recorded Steps
+
+### Save as new test
+
+1. After recording stops, click **Save as new test**.
+2. A new test case is created with a name like "Recorded test 2026-05-08 10-30".
+3. The app switches to the Tests section with the new test selected.
+4. The recorded steps are populated in the step editor.
+5. Confirm the test appears in the saved tests list.
+
+### Append to selected test
+
+1. Select an existing test in the Tests section.
+2. Switch to Recorder, record some steps, and stop.
+3. Click **Append to test**.
+4. Confirm the recorded steps are added after the existing steps.
+5. Switch to Tests and verify the step count increased.
+
+### Replace selected test steps
+
+1. Select an existing test in the Tests section.
+2. Switch to Recorder, record some steps, and stop.
+3. Click **Replace test steps**.
+4. A confirmation prompt appears: "Replace all steps in \"Test Name\"?"
+5. Click **Confirm replace**.
+6. Confirm the selected test now has only the recorded steps.
+7. Verify the original steps are gone.
+
+### No test selected
+
+1. With no test selected, record and stop.
+2. Only **Save as new test** should be available.
+3. Append and Replace buttons should not appear.
 
 ## Expected Results
 
@@ -210,6 +244,10 @@ The path is shown in the run result UI and stored in the result JSON.
 | Start recording with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
 | Stop recording | Browser closes, steps preview appears |
 | Stop recording with no browser | Error message shown |
+| Save recorded as new test | New test created with timestamped name, app switches to Tests, steps populated |
+| Append recorded to selected test | Steps added after existing steps, step count increases |
+| Replace selected test with recorded | Confirmation prompt appears, steps replaced on confirm, original steps gone |
+| Save recorded with no test selected | Only "Save as new test" is available |
 
 ## Known Limitations
 
