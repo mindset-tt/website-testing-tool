@@ -1631,7 +1631,7 @@ select:focus-visible,
 .report-browser-evidence-counts {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .report-browser-evidence-count,

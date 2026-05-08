@@ -22,7 +22,7 @@ The runner is responsible for:
 - Launching a Playwright browser and page.
 - Executing each step in order.
 - Capturing a screenshot on the first failure.
-- Capturing capped browser console messages, page errors, and request failures during the run.
+- Capturing capped browser console messages, page errors, request failures, and compact HTTP error responses during the run.
 - Closing the browser after execution (success or failure).
 - Writing the `RunResult` to disk.
 
@@ -82,6 +82,7 @@ interface RunResult {
   readonly consoleMessages?: readonly BrowserConsoleMessage[]; // optional browser console evidence
   readonly pageErrors?: readonly PageErrorRecord[]; // optional unhandled page errors
   readonly networkFailures?: readonly NetworkFailureRecord[]; // optional failed request evidence
+  readonly httpErrors?: readonly HttpErrorRecord[]; // optional completed 4xx/5xx response evidence
   readonly stepSnapshots?: readonly StepSnapshot[]; // historical test step data captured at run time
 }
 ```
@@ -177,14 +178,28 @@ interface NetworkFailureRecord {
 }
 ```
 
+### `HttpErrorRecord`
+
+```typescript
+interface HttpErrorRecord {
+  readonly timestamp: string;      // ISO 8601
+  readonly url: string;            // truncated for safe UI display/storage
+  readonly method?: string;
+  readonly resourceType?: string;
+  readonly status: number;         // 4xx or 5xx only
+  readonly statusText?: string;    // optional and truncated
+  readonly relatedStepIndex?: number; // optional 0-based step index when easy to associate
+}
+```
+
 MVP note:
 
 - `RunResult` now stores `stepSnapshots` when available.
-- `RunResult` can also store optional `consoleMessages`, `pageErrors`, and `networkFailures`.
+- `RunResult` can also store optional `consoleMessages`, `pageErrors`, `networkFailures`, and `httpErrors`.
 - Snapshot data is captured at run time and preserved even if the saved test case changes later.
-- Console, page-error, and request-failure evidence are capped in memory before save to keep the result JSON compact.
-- Failed-request capture is intentionally narrow in MVP: only `page.on('requestfailed')` events are stored, not all successful traffic or full HAR data.
-- Older run results remain valid when `consoleMessages`, `pageErrors`, `networkFailures`, or `stepSnapshots` are absent.
+- Console, page-error, request-failure, and HTTP-error evidence are capped in memory before save to keep the result JSON compact.
+- Network capture is intentionally narrow in MVP: failed requests plus completed 4xx/5xx responses only, not all successful traffic or full HAR data.
+- Older run results remain valid when `consoleMessages`, `pageErrors`, `networkFailures`, `httpErrors`, or `stepSnapshots` are absent.
 - The Results UI prefers snapshot data for target/value/timeout details and falls back to the current test case only for older run results without snapshots.
 
 ### `StepStatus`
@@ -231,8 +246,8 @@ Example: `artifacts/screenshots/run_abc123/step-2-failure.png`
 - The screenshot directory is created on demand.
 - Renderer screenshot previews must be loaded through a validated main-process bridge. The renderer must not read arbitrary project files directly.
 - MVP screenshot previews are limited to `.png` files that resolve inside `{projectPath}/artifacts/screenshots/`.
-- Browser console messages, page errors, and network failures are stored directly inside the `RunResult` JSON and are not written to separate files in MVP.
-- Evidence storage is capped to keep runs compact: currently 100 console messages, 50 page errors, and 50 network failures.
+- Browser console messages, page errors, network failures, and HTTP errors are stored directly inside the `RunResult` JSON and are not written to separate files in MVP.
+- Evidence storage is capped to keep runs compact: currently 100 console messages, 50 page errors, 50 network failures, and 50 HTTP errors.
 
 ## 7. Runner Lifecycle
 
@@ -241,18 +256,18 @@ Example: `artifacts/screenshots/run_abc123/step-2-failure.png`
 2. Create run ID and result directory.
 3. Launch browser (Playwright).
 4. Create new page.
-5. Attach best-effort `page.on('console')`, `page.on('pageerror')`, and `page.on('requestfailed')` listeners.
+5. Attach best-effort `page.on('console')`, `page.on('pageerror')`, `page.on('requestfailed')`, and `page.on('response')` listeners.
 6. For each step:
    a. Record startedAt.
    b. Track the current step index for optional evidence association.
    c. Execute step action.
-   c. If success: record passed, continue.
-   d. If failure:
+   d. If success: record passed, continue.
+   e. If failure:
       i. Capture screenshot.
       ii. Record failed with error message and screenshot path.
       iii. Mark remaining steps as skipped.
       iv. Break loop.
-   e. If unexpected error:
+   f. If unexpected error:
       i. Capture screenshot if possible.
       ii. Record error.
       iii. Mark remaining steps as skipped.

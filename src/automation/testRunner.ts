@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
 import { chromium } from 'playwright';
-import type { Browser, Page, Request } from 'playwright';
+import type { Browser, Page, Request, Response } from 'playwright';
 
 import type { TestCase, TestStep, RunResult, StepResult, StepStatus } from '../shared/project-schema';
 import { RUN_RESULT_SCHEMA_VERSION, validateRunResult, createStepSnapshot } from '../shared/project-schema';
@@ -87,6 +87,7 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
       consoleMessages: evidenceCollector.getConsoleMessages(),
       pageErrors: evidenceCollector.getPageErrors(),
       networkFailures: evidenceCollector.getNetworkFailures(),
+      httpErrors: evidenceCollector.getHttpErrors(),
       stepSnapshots: testCase.steps.map(createStepSnapshot)
     };
 
@@ -120,6 +121,7 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
       consoleMessages: evidenceCollector.getConsoleMessages(),
       pageErrors: evidenceCollector.getPageErrors(),
       networkFailures: evidenceCollector.getNetworkFailures(),
+      httpErrors: evidenceCollector.getHttpErrors(),
       stepSnapshots: testCase.steps.map(createStepSnapshot)
     };
 
@@ -175,6 +177,10 @@ function attachRunDiagnostics(
   page.on('requestfailed', (request) => {
     void captureNetworkFailure(request, evidenceCollector, getCurrentStepIndex);
   });
+
+  page.on('response', (response) => {
+    void captureHttpError(response, evidenceCollector, getCurrentStepIndex);
+  });
 }
 
 async function captureNetworkFailure(
@@ -197,6 +203,28 @@ async function captureNetworkFailure(
     });
   } catch {
     // Network failure capture is best-effort and must not fail the run.
+  }
+}
+
+async function captureHttpError(
+  response: Response,
+  evidenceCollector: ReturnType<typeof createRunEvidenceCollector>,
+  getCurrentStepIndex: () => number | undefined
+): Promise<void> {
+  try {
+    const request = response.request();
+
+    evidenceCollector.recordHttpError({
+      timestamp: new Date().toISOString(),
+      url: response.url(),
+      method: request.method(),
+      resourceType: request.resourceType(),
+      status: response.status(),
+      statusText: response.statusText(),
+      relatedStepIndex: getCurrentStepIndex()
+    });
+  } catch {
+    // HTTP error capture is best-effort and must not fail the run.
   }
 }
 

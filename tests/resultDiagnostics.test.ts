@@ -7,6 +7,7 @@ import {
   getBrowserEvidenceCounts,
   getConsoleMessagesForDisplay,
   getFailureScreenshotPath,
+  getHttpErrorsForDisplay,
   getNetworkFailuresForDisplay,
   getPageErrorStackPreview,
   getPageErrorsForDisplay,
@@ -120,6 +121,25 @@ const sampleRunResultWithBrowserEvidence: RunResult = {
       resourceType: 'script',
       failureText: 'net::ERR_CONNECTION_REFUSED'
     }
+  ],
+  httpErrors: [
+    {
+      timestamp: '2026-05-07T10:00:04.900Z',
+      url: 'https://example.com/api/orders',
+      method: 'GET',
+      resourceType: 'fetch',
+      status: 404,
+      statusText: 'Not Found',
+      relatedStepIndex: 1
+    },
+    {
+      timestamp: '2026-05-07T10:00:04.950Z',
+      url: 'https://example.com/api/checkout',
+      method: 'POST',
+      resourceType: 'xhr',
+      status: 500,
+      statusText: 'Internal Server Error'
+    }
   ]
 };
 
@@ -156,6 +176,7 @@ describe('result diagnostics helpers', () => {
     expect(summary).toContain('Console messages: 3 total (2 warnings/errors)');
     expect(summary).toContain('Page errors: 1');
     expect(summary).toContain('Network failures: 2');
+    expect(summary).toContain('HTTP errors: 2');
     expect(summary).toContain('Error: Expected text "Confirmed" not found');
     expect(summary).toContain('Screenshot: artifacts/screenshots/run_123/step-1-failure.png');
     expect(summary).not.toContain('Checkout widget crashed.');
@@ -187,7 +208,8 @@ describe('browser evidence diagnostics', () => {
       consoleMessages: 3,
       consoleWarningsOrErrors: 2,
       pageErrors: 1,
-      networkFailures: 2
+      networkFailures: 2,
+      httpErrors: 2
     });
     expect(consoleMessages.map((message) => message.type)).toEqual(['error', 'warning']);
   });
@@ -217,6 +239,14 @@ describe('browser evidence diagnostics', () => {
     expect(networkFailures).toHaveLength(1);
     expect(networkFailures[0]?.url).toBe('https://cdn.example.com/checkout-widget.js');
     expect(networkFailures[0]?.failureText).toBe('net::ERR_CONNECTION_REFUSED');
+  });
+
+  it('returns the latest HTTP errors for compact display', () => {
+    const httpErrors = getHttpErrorsForDisplay(sampleRunResultWithBrowserEvidence, 1);
+
+    expect(httpErrors).toHaveLength(1);
+    expect(httpErrors[0]?.status).toBe(500);
+    expect(httpErrors[0]?.statusText).toBe('Internal Server Error');
   });
 });
 

@@ -125,6 +125,16 @@ export interface NetworkFailureRecord {
   readonly relatedStepIndex?: number;
 }
 
+export interface HttpErrorRecord {
+  readonly timestamp: string;
+  readonly url: string;
+  readonly method?: string;
+  readonly resourceType?: string;
+  readonly status: number;
+  readonly statusText?: string;
+  readonly relatedStepIndex?: number;
+}
+
 export interface RunResult {
   readonly schemaVersion: typeof RUN_RESULT_SCHEMA_VERSION;
   readonly runId: string;
@@ -152,6 +162,11 @@ export interface RunResult {
    * Absent for older result files or runs that recorded no request failures.
    */
   readonly networkFailures?: readonly NetworkFailureRecord[];
+  /**
+   * Completed HTTP error responses (4xx/5xx) captured during the run.
+   * Absent for older result files or runs that recorded no HTTP errors.
+   */
+  readonly httpErrors?: readonly HttpErrorRecord[];
   /**
    * Historical step snapshots captured at run time.
    * Present for results saved by runner versions that support snapshots.
@@ -376,6 +391,18 @@ export function validateRunResult(value: unknown): string[] {
     }
   }
 
+  if (value.httpErrors !== undefined) {
+    if (!Array.isArray(value.httpErrors)) {
+      errors.push('Run result httpErrors must be an array when present.');
+    } else {
+      for (const [index, httpError] of value.httpErrors.entries()) {
+        for (const error of validateHttpErrorRecord(httpError)) {
+          errors.push(`HTTP error ${index + 1}: ${error}`);
+        }
+      }
+    }
+  }
+
   if (value.stepSnapshots !== undefined) {
     if (!Array.isArray(value.stepSnapshots)) {
       errors.push('Run result stepSnapshots must be an array when present.');
@@ -468,6 +495,46 @@ export function validateNetworkFailureRecord(value: unknown): string[] {
       value.status > 599)
   ) {
     errors.push('status must be an integer between 100 and 599 when present.');
+  }
+
+  if (
+    value.relatedStepIndex !== undefined &&
+    (typeof value.relatedStepIndex !== 'number' ||
+      !Number.isInteger(value.relatedStepIndex) ||
+      value.relatedStepIndex < 0)
+  ) {
+    errors.push('relatedStepIndex must be a non-negative integer when present.');
+  }
+
+  return errors;
+}
+
+export function validateHttpErrorRecord(value: unknown): string[] {
+  if (!isRecord(value)) {
+    return ['HTTP error record must be an object.'];
+  }
+
+  const errors: string[] = [];
+
+  for (const key of ['timestamp', 'url'] as const) {
+    if (!isNonEmptyString(value[key])) {
+      errors.push(`${key} must be a non-empty string.`);
+    }
+  }
+
+  for (const key of ['method', 'resourceType', 'statusText'] as const) {
+    if (value[key] !== undefined && typeof value[key] !== 'string') {
+      errors.push(`${key} must be a string when present.`);
+    }
+  }
+
+  if (
+    typeof value.status !== 'number' ||
+    !Number.isInteger(value.status) ||
+    value.status < 400 ||
+    value.status > 599
+  ) {
+    errors.push('status must be an integer between 400 and 599.');
   }
 
   if (

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   RUN_RESULT_SCHEMA_VERSION,
   validateBrowserConsoleMessage,
+  validateHttpErrorRecord,
   validateNetworkFailureRecord,
   validatePageErrorRecord,
   validateRunResult,
@@ -11,6 +12,7 @@ import {
 } from '../src/shared/project-schema';
 import type {
   BrowserConsoleMessage,
+  HttpErrorRecord,
   NetworkFailureRecord,
   PageErrorRecord,
   RunResult,
@@ -207,6 +209,34 @@ describe('validateNetworkFailureRecord', () => {
   });
 });
 
+describe('validateHttpErrorRecord', () => {
+  it('accepts an HTTP error record with optional fields', () => {
+    const httpError: HttpErrorRecord = {
+      timestamp: '2026-05-07T10:00:06.000Z',
+      url: 'https://example.com/api/orders',
+      method: 'GET',
+      resourceType: 'fetch',
+      status: 404,
+      statusText: 'Not Found',
+      relatedStepIndex: 1
+    };
+
+    expect(validateHttpErrorRecord(httpError)).toEqual([]);
+  });
+
+  it('rejects an HTTP error record with a non-error status', () => {
+    const httpError = {
+      timestamp: '2026-05-07T10:00:06.000Z',
+      url: 'https://example.com/api/orders',
+      status: 200
+    };
+
+    const errors = validateHttpErrorRecord(httpError);
+
+    expect(errors.some((e) => e.includes('status'))).toBe(true);
+  });
+});
+
 describe('validateRunResult', () => {
   it('accepts a valid passed run result', () => {
     const runResult: RunResult = {
@@ -310,6 +340,17 @@ describe('validateRunResult', () => {
           failureText: 'net::ERR_TIMED_OUT',
           relatedStepIndex: 0
         }
+      ],
+      httpErrors: [
+        {
+          timestamp: '2026-05-07T10:00:06.000Z',
+          url: 'https://example.com/api/orders',
+          method: 'GET',
+          resourceType: 'fetch',
+          status: 404,
+          statusText: 'Not Found',
+          relatedStepIndex: 0
+        }
       ]
     };
 
@@ -403,6 +444,13 @@ describe('validateRunResult', () => {
           timestamp: '',
           url: ''
         }
+      ],
+      httpErrors: [
+        {
+          timestamp: '',
+          url: '',
+          status: 200
+        }
       ]
     };
 
@@ -411,6 +459,7 @@ describe('validateRunResult', () => {
     expect(errors.some((e) => e.includes('Console message 1'))).toBe(true);
     expect(errors.some((e) => e.includes('Page error 1'))).toBe(true);
     expect(errors.some((e) => e.includes('Network failure 1'))).toBe(true);
+    expect(errors.some((e) => e.includes('HTTP error 1'))).toBe(true);
   });
 });
 

@@ -4,7 +4,7 @@ Last updated: 2026-05-08
 
 ## Summary
 
-The repository now has a working Electron + React + TypeScript MVP workbench with local project storage, recent-project quick-open, project rename, manual step editing, test-level management, recorder, runner, results, and documented Windows x64 packaging. Run results now capture request failures alongside browser console messages, page errors, failure screenshots, and step snapshots, so failed-run diagnostics are more explainable without changing schemas or packaging. Final publisher/legal metadata remains deferred and does not block feature development.
+The repository now has a working Electron + React + TypeScript MVP workbench with local project storage, recent-project quick-open, project rename, manual step editing, test-level management, recorder, runner, results, and documented Windows x64 packaging. Run results now capture compact HTTP 4xx/5xx responses alongside request failures, browser console messages, page errors, failure screenshots, and step snapshots, so failed-run diagnostics are more explainable without changing schemas or packaging. Final publisher/legal metadata remains deferred and does not block feature development.
 
 ## Current Facts
 
@@ -37,15 +37,16 @@ The repository now has a working Electron + React + TypeScript MVP workbench wit
 - Run results now capture `stepSnapshots` as part of the saved result when the runner supports it, so target, value, timeout, and notes can remain historically accurate even if the test case edits later.
 - Run results now also capture optional `consoleMessages` and `pageErrors` arrays. Collection is best-effort, messages are truncated, console/page-error counts are capped, and older result files without those fields remain valid with no migration.
 - Run results now also capture optional `networkFailures` from Playwright `page.on('requestfailed')`. Capture stays narrow on purpose: failed requests only, capped at 50 entries, with truncated URLs/failure text and optional step association.
-- The Results panel now shows a compact **Browser evidence** section for selected runs when browser evidence exists. It shows console message count, warning/error count, page-error count, network failure count, and small lists of the most relevant recent entries.
-- Copied failure summaries now include browser evidence counts when present, including network failure count, but they do not dump full console logs, page-error stacks, or raw request lists into the clipboard.
+- Run results now also capture optional `httpErrors` from Playwright `page.on('response')` when the completed response status is `>= 400`. Only 4xx/5xx responses are stored, entries are capped at 50, internal schemes are ignored, and long URLs/status text are truncated.
+- The Results panel now shows a compact **Browser evidence** section for selected runs when browser evidence exists. It shows console message count, warning/error count, page-error count, network failure count, HTTP error count, and small lists of the most relevant recent entries.
+- Copied failure summaries now include browser evidence counts when present, including network failure and HTTP error counts, but they do not dump full console logs, page-error stacks, raw request lists, or full HTTP logs into the clipboard.
 - The 2026-05-07 packaged portable EXE validation confirmed the missing-Chromium path end to end: the app opens, Tests and Recorder show the missing-browser note, Run and Start Recording show user-safe install guidance, no raw Playwright stack trace is shown in the normal UI, and the app stays running.
 - The packaged validation used the portable EXE plus a temporary user-data directory and a CDP attachment. In this Codex Windows shell, `ELECTRON_RUN_AS_NODE=1` had to be cleared before launching any Electron or packaged-app process.
 - During the Windows missing-Chromium simulation, the local Playwright cache folder `C:\Users\khamp\AppData\Local\ms-playwright\chromium-1217` was renamed first, but the folder did not survive the probe intact and had to be restored with `npx playwright install chromium`.
 
 ## Current Focus
 
-Packaged missing-Chromium validation, project rename, recent-project quick-open, forget-recent cleanup, test-level management, failure screenshot preview, failure summary copy, historical step snapshots, and compact browser evidence capture are complete on the current Windows portable build. The next smallest valuable work is to continue runner and results hardening with the next missing high-signal network context, especially HTTP error responses that do not trigger `requestfailed`, or with broader artifact navigation once that evidence gap is covered. Final publisher/legal metadata remains deferred and should not block MVP feature work.
+Packaged missing-Chromium validation, project rename, recent-project quick-open, forget-recent cleanup, test-level management, failure screenshot preview, failure summary copy, historical step snapshots, and compact browser evidence capture are complete on the current Windows portable build. The next smallest valuable work is to continue runner and results hardening with the next missing network context around the captured failures, such as lightweight request/response context or broader artifact navigation, while keeping evidence storage compact. Final publisher/legal metadata remains deferred and should not block MVP feature work.
 
 ## Important Constraint
 

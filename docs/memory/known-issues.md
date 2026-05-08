@@ -13,8 +13,8 @@ Last updated: 2026-05-08
 - This Codex Windows shell exports `ELECTRON_RUN_AS_NODE=1`, so direct Electron or packaged-app launches from automation will exit immediately unless that environment variable is cleared first.
 - Recorder selectors are still basic (`id`, `data-testid`, `name`, `tag + class`) and can remain brittle on real sites.
 - Destructive project delete, project folder rename, migration, and fuller recovery flows do not exist yet.
-- Failure screenshots, browser console messages, page errors, and request failures now appear in Results diagnostics, but traces, full HAR/network captures, and richer artifact navigation are still absent for some real QA workflows.
-- The new network evidence only covers Playwright `requestfailed` events. HTTP 4xx/5xx responses that still complete normally may still be missing from MVP diagnostics.
+- Failure screenshots, browser console messages, page errors, request failures, and compact HTTP errors now appear in Results diagnostics, but traces, full HAR/network captures, and richer artifact navigation are still absent for some real QA workflows.
+- Network evidence is intentionally compact and selective. Successful 2xx/3xx responses are not captured, and no headers or bodies are stored yet.
 - Run results now support historical `stepSnapshots` to preserve target, value, and timeout details as they existed at run time. Older run results without snapshots still fall back to reconstructing details from the current saved test case.
 - The accepted Electron stack still carries app-size and security-hardening costs that need ongoing review.
 - Fedora remains workable for development, but final packaging and runtime validation still depend on Windows sessions.

@@ -1,6 +1,7 @@
 import type {
   BrowserConsoleLocation,
   BrowserConsoleMessage,
+  HttpErrorRecord,
   NetworkFailureRecord,
   PageErrorRecord,
   RunResult,
@@ -19,6 +20,7 @@ export interface BrowserEvidenceCounts {
   readonly consoleWarningsOrErrors: number;
   readonly pageErrors: number;
   readonly networkFailures: number;
+  readonly httpErrors: number;
 }
 
 const RELEVANT_CONSOLE_TYPES = new Set(['warning', 'error', 'assert']);
@@ -33,7 +35,8 @@ export function hasBrowserEvidence(runResult: RunResult): boolean {
   return (
     (runResult.consoleMessages?.length ?? 0) > 0 ||
     (runResult.pageErrors?.length ?? 0) > 0 ||
-    (runResult.networkFailures?.length ?? 0) > 0
+    (runResult.networkFailures?.length ?? 0) > 0 ||
+    (runResult.httpErrors?.length ?? 0) > 0
   );
 }
 
@@ -41,12 +44,14 @@ export function getBrowserEvidenceCounts(runResult: RunResult): BrowserEvidenceC
   const consoleMessages = runResult.consoleMessages ?? [];
   const pageErrors = runResult.pageErrors ?? [];
   const networkFailures = runResult.networkFailures ?? [];
+  const httpErrors = runResult.httpErrors ?? [];
 
   return {
     consoleMessages: consoleMessages.length,
     consoleWarningsOrErrors: consoleMessages.filter(isConsoleWarningOrError).length,
     pageErrors: pageErrors.length,
-    networkFailures: networkFailures.length
+    networkFailures: networkFailures.length,
+    httpErrors: httpErrors.length
   };
 }
 
@@ -88,6 +93,16 @@ export function getNetworkFailuresForDisplay(runResult: RunResult, limit = 3): r
   }
 
   return networkFailures.slice(-limit).reverse();
+}
+
+export function getHttpErrorsForDisplay(runResult: RunResult, limit = 3): readonly HttpErrorRecord[] {
+  const httpErrors = runResult.httpErrors ?? [];
+
+  if (httpErrors.length === 0 || limit <= 0) {
+    return [];
+  }
+
+  return httpErrors.slice(-limit).reverse();
 }
 
 export function formatBrowserEvidenceLocation(location: BrowserConsoleLocation | null | undefined): string | null {
@@ -246,6 +261,10 @@ export function buildFailureSummary(
 
   if (browserEvidenceCounts.networkFailures > 0) {
     lines.push(`Network failures: ${browserEvidenceCounts.networkFailures}`);
+  }
+
+  if (browserEvidenceCounts.httpErrors > 0) {
+    lines.push(`HTTP errors: ${browserEvidenceCounts.httpErrors}`);
   }
 
   lines.push(`Error: ${errorMessage}`);

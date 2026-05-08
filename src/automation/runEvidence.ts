@@ -1,6 +1,7 @@
 import type {
   BrowserConsoleLocation,
   BrowserConsoleMessage,
+  HttpErrorRecord,
   NetworkFailureRecord,
   PageErrorRecord
 } from '../shared/project-schema';
@@ -8,6 +9,7 @@ import type {
 export const MAX_CONSOLE_MESSAGE_COUNT = 100;
 export const MAX_PAGE_ERROR_COUNT = 50;
 export const MAX_NETWORK_FAILURE_COUNT = 50;
+export const MAX_HTTP_ERROR_COUNT = 50;
 export const MAX_CONSOLE_TEXT_LENGTH = 400;
 export const MAX_CONSOLE_TYPE_LENGTH = 32;
 export const MAX_LOCATION_URL_LENGTH = 240;
@@ -18,6 +20,7 @@ export const MAX_NETWORK_URL_LENGTH = 320;
 export const MAX_NETWORK_METHOD_LENGTH = 16;
 export const MAX_NETWORK_RESOURCE_TYPE_LENGTH = 32;
 export const MAX_NETWORK_FAILURE_TEXT_LENGTH = 240;
+export const MAX_HTTP_STATUS_TEXT_LENGTH = 120;
 
 const ELLIPSIS = '...';
 const IGNORED_NETWORK_FAILURE_URL_PREFIXES = ['about:', 'blob:', 'data:', 'devtools:'] as const;
@@ -48,19 +51,32 @@ interface NetworkFailureInput {
   readonly relatedStepIndex?: number;
 }
 
+interface HttpErrorInput {
+  readonly timestamp?: string;
+  readonly url?: string;
+  readonly method?: string;
+  readonly resourceType?: string;
+  readonly status?: number;
+  readonly statusText?: string;
+  readonly relatedStepIndex?: number;
+}
+
 export interface RunEvidenceCollector {
   recordConsoleMessage(input: ConsoleMessageInput): void;
   recordPageError(input: PageErrorInput): void;
   recordNetworkFailure(input: NetworkFailureInput): void;
+  recordHttpError(input: HttpErrorInput): void;
   getConsoleMessages(): readonly BrowserConsoleMessage[] | undefined;
   getPageErrors(): readonly PageErrorRecord[] | undefined;
   getNetworkFailures(): readonly NetworkFailureRecord[] | undefined;
+  getHttpErrors(): readonly HttpErrorRecord[] | undefined;
 }
 
 export function createRunEvidenceCollector(): RunEvidenceCollector {
   const consoleMessages: BrowserConsoleMessage[] = [];
   const pageErrors: PageErrorRecord[] = [];
   const networkFailures: NetworkFailureRecord[] = [];
+  const httpErrors: HttpErrorRecord[] = [];
 
   return {
     recordConsoleMessage(input) {
@@ -86,7 +102,7 @@ export function createRunEvidenceCollector(): RunEvidenceCollector {
       pushCapped(pageErrors, entry, MAX_PAGE_ERROR_COUNT);
     },
     recordNetworkFailure(input) {
-      if (shouldIgnoreNetworkFailureUrl(input.url)) {
+      if (shouldIgnoreTrackedUrl(input.url)) {
         return;
       }
 
@@ -105,6 +121,32 @@ export function createRunEvidenceCollector(): RunEvidenceCollector {
 
       pushCapped(networkFailures, entry, MAX_NETWORK_FAILURE_COUNT);
     },
+    recordHttpError(input) {
+      if (shouldIgnoreTrackedUrl(input.url)) {
+        return;
+      }
+
+      const status = normalizeHttpErrorStatus(input.status);
+
+      if (status === undefined) {
+        return;
+      }
+
+      const entry: HttpErrorRecord = {
+        timestamp: normalizeTimestamp(input.timestamp),
+        url: normalizeSingleLineText(input.url, '(unknown request URL)', MAX_NETWORK_URL_LENGTH),
+        method: normalizeOptionalSingleLineText(input.method, MAX_NETWORK_METHOD_LENGTH)?.toUpperCase(),
+        resourceType: normalizeOptionalSingleLineText(
+          input.resourceType,
+          MAX_NETWORK_RESOURCE_TYPE_LENGTH
+        )?.toLowerCase(),
+        status,
+        statusText: normalizeOptionalSingleLineText(input.statusText, MAX_HTTP_STATUS_TEXT_LENGTH),
+        relatedStepIndex: normalizeRelatedStepIndex(input.relatedStepIndex)
+      };
+
+      pushCapped(httpErrors, entry, MAX_HTTP_ERROR_COUNT);
+    },
     getConsoleMessages() {
       return consoleMessages.length > 0 ? [...consoleMessages] : undefined;
     },
@@ -113,6 +155,9 @@ export function createRunEvidenceCollector(): RunEvidenceCollector {
     },
     getNetworkFailures() {
       return networkFailures.length > 0 ? [...networkFailures] : undefined;
+    },
+    getHttpErrors() {
+      return httpErrors.length > 0 ? [...httpErrors] : undefined;
     }
   };
 }
@@ -209,7 +254,15 @@ function normalizeHttpStatus(value: number | undefined): number | undefined {
   return value;
 }
 
-function shouldIgnoreNetworkFailureUrl(value: string | undefined): boolean {
+function normalizeHttpErrorStatus(value: number | undefined): number | undefined {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 400 || value > 599) {
+    return undefined;
+  }
+
+  return value;
+}
+
+function shouldIgnoreTrackedUrl(value: string | undefined): boolean {
   if (typeof value !== 'string') {
     return false;
   }

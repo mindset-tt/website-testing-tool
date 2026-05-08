@@ -5,6 +5,7 @@ import type { ReactElement } from 'react';
 import { toTestCaseFileName } from '../../shared/project-schema';
 import type {
   BrowserConsoleMessage,
+  HttpErrorRecord,
   NetworkFailureRecord,
   PageErrorRecord,
   RunResult,
@@ -19,6 +20,7 @@ import {
   getPrimaryFailureStep,
   getBrowserEvidenceCounts,
   getConsoleMessagesForDisplay,
+  getHttpErrorsForDisplay,
   getNetworkFailuresForDisplay,
   getPageErrorStackPreview,
   getPageErrorsForDisplay,
@@ -92,6 +94,10 @@ function getNetworkFailureMessage(networkFailure: NetworkFailureRecord): string 
   return networkFailure.failureText ?? 'Request failed without an error text.';
 }
 
+function getHttpErrorTone(httpError: HttpErrorRecord): 'danger' | 'warning' {
+  return httpError.status >= 500 ? 'danger' : 'warning';
+}
+
 export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const [results, setResults] = useState<readonly RunResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -121,6 +127,7 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const displayedConsoleMessages = selectedResult ? getConsoleMessagesForDisplay(selectedResult) : [];
   const displayedPageErrors = selectedResult ? getPageErrorsForDisplay(selectedResult) : [];
   const displayedNetworkFailures = selectedResult ? getNetworkFailuresForDisplay(selectedResult) : [];
+  const displayedHttpErrors = selectedResult ? getHttpErrorsForDisplay(selectedResult) : [];
 
   useEffect(() => {
     let cancelled = false;
@@ -549,6 +556,12 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
                   </span>
                   <span className="report-browser-evidence-count-label">Network failures</span>
                 </div>
+                <div className="report-browser-evidence-count">
+                  <span className="report-browser-evidence-count-value">
+                    {browserEvidenceCounts.httpErrors}
+                  </span>
+                  <span className="report-browser-evidence-count-label">HTTP errors</span>
+                </div>
               </div>
 
               {displayedConsoleMessages.length > 0 && (
@@ -680,6 +693,57 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
                         </p>
                         <p className="report-browser-evidence-location report-mono">
                           {networkFailure.url}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {displayedHttpErrors.length > 0 && (
+                <section className="report-browser-evidence-block" aria-label="HTTP errors">
+                  <div className="report-browser-evidence-block-header">
+                    <h5>HTTP errors</h5>
+                    <span className="report-browser-evidence-note">Latest 4xx and 5xx responses</span>
+                  </div>
+                  <div className="report-browser-evidence-list">
+                    {displayedHttpErrors.map((httpError: HttpErrorRecord, index) => (
+                      <article
+                        key={`${httpError.timestamp}-${httpError.url}-${httpError.status}-${index}`}
+                        className={
+                          `report-browser-evidence-entry ` +
+                          `report-browser-evidence-entry-${getHttpErrorTone(httpError)}`
+                        }
+                      >
+                        <div className="report-browser-evidence-entry-header">
+                          <span
+                            className={
+                              `report-browser-evidence-badge ` +
+                              `report-browser-evidence-badge-${getHttpErrorTone(httpError)}`
+                            }
+                          >
+                            http {httpError.status}
+                          </span>
+                          <span className="report-browser-evidence-meta">
+                            {formatEvidenceTimestamp(httpError.timestamp)}
+                          </span>
+                          {typeof httpError.relatedStepIndex === 'number' && (
+                            <span className="report-browser-evidence-meta">
+                              Step {httpError.relatedStepIndex + 1}
+                            </span>
+                          )}
+                          {httpError.method && (
+                            <span className="report-browser-evidence-meta">{httpError.method}</span>
+                          )}
+                          {httpError.resourceType && (
+                            <span className="report-browser-evidence-meta">{httpError.resourceType}</span>
+                          )}
+                        </div>
+                        <p className="report-browser-evidence-text">
+                          {httpError.statusText ?? `HTTP ${httpError.status} response`}
+                        </p>
+                        <p className="report-browser-evidence-location report-mono">
+                          {httpError.url}
                         </p>
                       </article>
                     ))}
