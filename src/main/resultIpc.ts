@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import type {
@@ -7,7 +7,13 @@ import type {
   ResultListActionResult,
   ResultReadActionResult
 } from '../shared/preload-api';
-import { exportRunHtmlReport, listRunResults, readFailureScreenshot, readRunResult } from '../storage/resultStorage';
+import {
+  exportRunHtmlReport,
+  listRunResults,
+  readFailureScreenshot,
+  readRunResult,
+  resolveExportedReportPath
+} from '../storage/resultStorage';
 
 export function registerResultIpc(): void {
   ipcMain.handle(
@@ -91,6 +97,54 @@ export function registerResultIpc(): void {
           ok: true,
           reportPath: exported.reportPath
         };
+      } catch (error) {
+        return { ok: false, error: getErrorMessage(error) };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.resultOpenExportedReport,
+    async (_event, projectPath: unknown, reportPath: unknown): Promise<ResultExportActionResult> => {
+      if (typeof projectPath !== 'string' || projectPath.trim().length === 0) {
+        return { ok: false, error: 'Project path is required.' };
+      }
+
+      if (typeof reportPath !== 'string' || reportPath.trim().length === 0) {
+        return { ok: false, error: 'HTML report path is required.' };
+      }
+
+      try {
+        const resolvedPath = resolveExportedReportPath(projectPath.trim(), reportPath.trim());
+        const openError = await shell.openPath(resolvedPath);
+
+        if (openError && openError.length > 0) {
+          return { ok: false, error: `Could not open the report. ${openError}` };
+        }
+
+        return { ok: true, reportPath };
+      } catch (error) {
+        return { ok: false, error: getErrorMessage(error) };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.resultRevealExportedReport,
+    async (_event, projectPath: unknown, reportPath: unknown): Promise<ResultExportActionResult> => {
+      if (typeof projectPath !== 'string' || projectPath.trim().length === 0) {
+        return { ok: false, error: 'Project path is required.' };
+      }
+
+      if (typeof reportPath !== 'string' || reportPath.trim().length === 0) {
+        return { ok: false, error: 'HTML report path is required.' };
+      }
+
+      try {
+        const resolvedPath = resolveExportedReportPath(projectPath.trim(), reportPath.trim());
+        shell.showItemInFolder(resolvedPath);
+
+        return { ok: true, reportPath };
       } catch (error) {
         return { ok: false, error: getErrorMessage(error) };
       }

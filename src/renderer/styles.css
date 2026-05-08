@@ -360,6 +360,19 @@ button {
   padding: 0 10px;
 }
 
+.report-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.report-export-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .button:disabled,
 .icon-button:disabled,
 .inline-action:disabled,

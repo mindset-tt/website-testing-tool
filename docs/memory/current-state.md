@@ -4,7 +4,7 @@ Last updated: 2026-05-08
 
 ## Summary
 
-The repository now has a working Electron + React + TypeScript MVP workbench with local project storage, recent-project quick-open, project rename, manual step editing, test-level management, recorder, runner, results, lightweight HTML run-report export, and documented Windows x64 packaging. Run results now capture compact HTTP 4xx/5xx responses alongside request failures, browser console messages, page errors, failure screenshots, and step snapshots, and selected saved runs can be exported as shareable local HTML summaries without changing schemas or packaging. Final publisher/legal metadata remains deferred and does not block feature development.
+The repository now has a working Electron + React + TypeScript MVP workbench with local project storage, recent-project quick-open, project rename, manual step editing, test-level management, recorder, runner, results, lightweight HTML run-report export, and safe follow-through actions to open or reveal exported reports. Run results capture compact HTTP 4xx/5xx responses alongside request failures, browser console messages, and page errors, with selected saved runs exportable as standalone HTML summaries and immediately openable or revealable in file managers without exposing arbitrary filesystem access.
 
 ## Current Facts
 
@@ -42,13 +42,14 @@ The repository now has a working Electron + React + TypeScript MVP workbench wit
 - Copied failure summaries now include browser evidence counts when present, including network failure and HTTP error counts, but they do not dump full console logs, page-error stacks, raw request lists, or full HTTP logs into the clipboard.
 - Selected saved runs can now be exported through a preload-safe IPC path as standalone HTML reports under `reports/report-{runId}.html` inside the current project. The renderer cannot choose arbitrary output paths, and the report generator escapes user-controlled text instead of injecting raw values into HTML.
 - Exported HTML reports include run metadata, failure summary details, step results, browser evidence counts, compact browser evidence sections, generated-at timestamp, and a local/offline note. Screenshot paths are included as text only for MVP.
-- The 2026-05-07 packaged portable EXE validation confirmed the missing-Chromium path end to end: the app opens, Tests and Recorder show the missing-browser note, Run and Start Recording show user-safe install guidance, no raw Playwright stack trace is shown in the normal UI, and the app stays running.
+- Exported HTML reports can now be opened in the default application or revealed in the file manager through preload-safe follow-through actions. Path validation prevents traversal, absolute paths, wrong extensions, and non-canonical filenames. Both open and reveal use Electron `shell` APIs called only from the main process.
+- The 2026-05-08 open/reveal report feature uses a new `resolveExportedReportPath()` validator that rejects `..` traversal, absolute paths, URL schemes, non-HTML extensions, and filenames that don't match the `report-{runId}.html` pattern. It enforces root-level `reports/` directory containment.
 - The packaged validation used the portable EXE plus a temporary user-data directory and a CDP attachment. In this Codex Windows shell, `ELECTRON_RUN_AS_NODE=1` had to be cleared before launching any Electron or packaged-app process.
 - During the Windows missing-Chromium simulation, the local Playwright cache folder `C:\Users\khamp\AppData\Local\ms-playwright\chromium-1217` was renamed first, but the folder did not survive the probe intact and had to be restored with `npx playwright install chromium`.
 
 ## Current Focus
 
-Packaged missing-Chromium validation, project rename, recent-project quick-open, forget-recent cleanup, test-level management, failure screenshot preview, failure summary copy, historical step snapshots, compact browser evidence capture, and lightweight HTML report export are complete on the current Windows portable build. The next smallest valuable work is to improve exported-report follow-through or richer diagnostics around saved results, such as opening exported reports more directly or adding the next compact request/response context, while keeping evidence storage compact. Final publisher/legal metadata remains deferred and should not block MVP feature work.
+Packaged missing-Chromium validation, project rename, recent-project quick-open, forget-recent cleanup, test-level management, failure screenshot preview, failure summary copy, historical step snapshots, compact browser evidence capture, lightweight HTML report export, and now safe follow-through actions to open or reveal exported reports are complete. The next smallest valuable work is to continue runner/results diagnostics with lightweight request/response context around captured network failures and HTTP errors while keeping evidence storage compact, or apply the `Local QA Workbench` design direction incrementally to shared surfaces.
 
 ## Important Constraint
 

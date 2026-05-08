@@ -9,6 +9,7 @@ import type { RunResult } from '../src/shared/project-schema';
 import {
   exportRunHtmlReport,
   readFailureScreenshot,
+  resolveExportedReportPath,
   resolveFailureScreenshotPath,
   resolveRunHtmlReportPath
 } from '../src/storage/resultStorage';
@@ -138,6 +139,48 @@ describe('result storage HTML export', () => {
     const resolvedPath = resolveRunHtmlReportPath(projectPath, 'run_safe_export');
 
     expect(resolvedPath).toBe(join(projectPath, 'reports', 'report-run_safe_export.html'));
+  });
+
+  it('validates a safe exported report path', async () => {
+    const projectPath = await createTempProjectDir();
+    const resolvedPath = resolveExportedReportPath(projectPath, join('reports', 'report-run_safe_export.html'));
+
+    expect(resolvedPath).toBe(join(projectPath, 'reports', 'report-run_safe_export.html'));
+  });
+
+  it('rejects traversal attempts in exported report paths', async () => {
+    const projectPath = await createTempProjectDir();
+
+    expect(() =>
+      resolveExportedReportPath(projectPath, join('reports', '..', 'results', 'run-run_safe_export.html'))
+    ).toThrow('HTML report path must stay inside the project reports folder.');
+  });
+
+  it('rejects absolute exported report paths', async () => {
+    const projectPath = await createTempProjectDir();
+    const absolutePath = process.platform === 'win32'
+      ? 'C:\\reports\\report-run_safe_export.html'
+      : '/tmp/reports/report-run_safe_export.html';
+
+    expect(() => resolveExportedReportPath(projectPath, absolutePath)).toThrow(
+      'HTML report path must stay inside the project reports folder.'
+    );
+  });
+
+  it('rejects exported report paths with the wrong extension', async () => {
+    const projectPath = await createTempProjectDir();
+
+    expect(() =>
+      resolveExportedReportPath(projectPath, join('reports', 'report-run_safe_export.txt'))
+    ).toThrow('Only HTML report files can be opened.');
+  });
+
+  it('rejects exported report paths that do not use the canonical report filename pattern', async () => {
+    const projectPath = await createTempProjectDir();
+
+    expect(() =>
+      resolveExportedReportPath(projectPath, join('reports', 'other-run_safe_export.html'))
+    ).toThrow('HTML report filename is invalid.');
   });
 
   it('rejects invalid run IDs before exporting a report', async () => {

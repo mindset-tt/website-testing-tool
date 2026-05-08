@@ -4,11 +4,10 @@ Last updated: 2026-05-08
 
 ## Priority Order
 
-1. Add a small follow-through action for exported HTML reports, such as opening the exported report or revealing it in the project folder without exposing arbitrary filesystem browsing.
-2. Continue runner/results evidence work by adding lightweight request/response context around captured network failures and HTTP errors while keeping storage compact.
+1. Continue runner/results evidence work by adding lightweight request/response context around captured network failures and HTTP errors while keeping storage compact.
+2. Apply the new `Local QA Workbench` direction incrementally to shared renderer surfaces without changing product behavior.
 3. Continue recorder/runner hardening after the evidence improvements above are complete.
-4. Apply the new `Local QA Workbench` direction incrementally to shared renderer surfaces without changing product behavior.
-5. Revisit broader project recovery or migration flows only after failure diagnostics and workflow clarity improve.
+4. Revisit broader project recovery or migration flows only after failure diagnostics and workflow clarity improve.
 
 ## Notes
 
@@ -33,3 +32,4 @@ Last updated: 2026-05-08
 - Test rename, duplicate, and guarded delete are now implemented in the Tests workspace. Rename stays on the existing `saveTestCase` path, duplicates get a new `testId` and fresh step IDs, and delete uses inline confirmation before file removal.
 - `docs/ux/product-style-direction.md` defines the chosen product direction: a Linear-led `Local QA Workbench` blend with Cursor, Raycast, Sentry, and Stripe as secondary references.
 - Code signing and auto-update remain deferred for MVP.
+- Exported HTML reports can now be opened or revealed in a file manager through safe preload-bridged IPC actions. Path validation prevents traversal, absolute paths, wrong extensions, and non-canonical filenames.

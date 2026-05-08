@@ -1,5 +1,5 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { extname, isAbsolute, join, normalize, relative, resolve } from 'node:path';
+import { basename, dirname, extname, isAbsolute, join, normalize, relative, resolve } from 'node:path';
 
 import type { RunResult } from '../shared/project-schema';
 import { PROJECT_DIRECTORY_NAMES, validateRunResult } from '../shared/project-schema';
@@ -172,6 +172,53 @@ export function resolveRunHtmlReportPath(projectPath: string, runId: string): st
     isAbsolute(relativeToReports)
   ) {
     throw new Error('HTML report path must stay inside the project reports folder.');
+  }
+
+  return resolvedReportPath;
+}
+
+export function resolveExportedReportPath(projectPath: string, reportPath: string): string {
+  assertProjectPath(projectPath);
+
+  if (typeof reportPath !== 'string' || reportPath.trim().length === 0) {
+    throw new Error('HTML report path is required.');
+  }
+
+  const normalizedProjectPath = normalizeProjectPath(projectPath);
+  const normalizedReportPath = normalize(reportPath.trim());
+
+  if (isAbsolute(normalizedReportPath)) {
+    throw new Error('HTML report path must stay inside the project reports folder.');
+  }
+
+  if (normalizedReportPath.includes('://')) {
+    throw new Error('HTML report path must stay inside the project reports folder.');
+  }
+
+  if (extname(normalizedReportPath).toLowerCase() !== HTML_REPORT_FILE_SUFFIX) {
+    throw new Error('Only HTML report files can be opened.');
+  }
+
+  const reportsDirectory = resolve(normalizedProjectPath, REPORTS_DIRECTORY_NAME);
+  const resolvedReportPath = resolve(normalizedProjectPath, normalizedReportPath);
+  const relativeToReports = relative(reportsDirectory, resolvedReportPath);
+
+  if (
+    relativeToReports.length === 0 ||
+    relativeToReports.startsWith('..') ||
+    isAbsolute(relativeToReports)
+  ) {
+    throw new Error('HTML report path must stay inside the project reports folder.');
+  }
+
+  if (dirname(relativeToReports) !== '.') {
+    throw new Error('HTML report path must stay at the root of the project reports folder.');
+  }
+
+  const fileName = basename(resolvedReportPath);
+
+  if (!/^report-[a-z0-9_-]+\.html$/i.test(fileName)) {
+    throw new Error('HTML report filename is invalid.');
   }
 
   return resolvedReportPath;

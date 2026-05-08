@@ -33,6 +33,7 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 - Run results now also capture capped request failures through Playwright `page.on('requestfailed')`. Capture is intentionally narrow for MVP: failed requests only, no full HAR, and simple filtering of obviously internal URL schemes.
 - Run results now also capture capped completed HTTP 4xx/5xx responses through Playwright `page.on('response')`. The runner ignores 2xx/3xx responses and internal URL schemes so the stored evidence stays compact.
 - The Results panel now renders a compact Browser evidence section for selected runs when evidence exists, showing counts plus a small list of the latest relevant console, page-error, failed-request, and HTTP-error entries.
+- Exported HTML reports can now be opened in the default application or revealed in the file manager through secure preload-bridged IPC handlers. Path validation prevents traversal, absolute paths, URL schemes, non-HTML extensions, and non-canonical report filenames. Both operations use Electron `shell` APIs called only from the main process.
 - Project metadata rename now updates only `project.json` `name` and `updatedAt`, preserving the stable `projectId`, `createdAt`, and folder path.
 - Recent projects are now cached outside project folders in Electron `userData` as `recent-projects.json`, with a small deduplicated quick-open list for the no-project startup state.
 - The no-project startup state now supports a non-destructive forget action for recent-project entries. It removes only the matching cache entry by project path and does not touch project folders or project metadata.
@@ -49,4 +50,4 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 
 ## Next Work
 
-Continue improving runner and results diagnostics now that historical failed-step context plus console/page-error/request-failure/HTTP-error evidence and HTML export are covered, starting with either a small exported-report follow-through action or the next compact request/response context gap while keeping the accepted local-first architecture intact.
+Continue improving runner and results diagnostics starting with either lightweight request/response context for network failures and HTTP errors, or the next incremental `Local QA Workbench` design surface polish, while keeping the accepted local-first architecture intact.

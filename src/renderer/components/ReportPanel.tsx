@@ -114,6 +114,11 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const [exportingReport, setExportingReport] = useState(false);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportedReportPath, setExportedReportPath] = useState<string | null>(null);
+  const [reportActionMessage, setReportActionMessage] = useState<string | null>(null);
+  const [reportActionError, setReportActionError] = useState<string | null>(null);
+  const [openingReport, setOpeningReport] = useState(false);
+  const [revealingReport, setRevealingReport] = useState(false);
 
   const failureStepResult = selectedResult ? getPrimaryFailureStep(selectedResult) : null;
   const failureStepSnapshot = selectedResult ? getStepSnapshotForResult(failureStepResult, selectedResult) : null;
@@ -278,6 +283,11 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
     setExportingReport(false);
     setExportMessage(null);
     setExportError(null);
+    setExportedReportPath(null);
+    setReportActionMessage(null);
+    setReportActionError(null);
+    setOpeningReport(false);
+    setRevealingReport(false);
   };
 
   const handleCopyFailureSummary = async (): Promise<void> => {
@@ -309,11 +319,15 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
     setExportingReport(true);
     setExportMessage(null);
     setExportError(null);
+    setReportActionMessage(null);
+    setReportActionError(null);
+    setExportedReportPath(null);
 
     try {
       const result = await window.websiteTestingTool.result.exportRunHtmlReport(projectPath, selectedResult.runId);
 
       if (result.ok) {
+        setExportedReportPath(result.reportPath);
         setExportMessage(`HTML report exported to ${result.reportPath}.`);
       } else {
         setExportError(result.error);
@@ -322,6 +336,54 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
       setExportError(error instanceof Error ? error.message : 'HTML report export failed.');
     } finally {
       setExportingReport(false);
+    }
+  };
+
+  const handleOpenExportedReport = async (): Promise<void> => {
+    if (!selectedResult || !exportedReportPath) {
+      return;
+    }
+
+    setOpeningReport(true);
+    setReportActionMessage(null);
+    setReportActionError(null);
+
+    try {
+      const result = await window.websiteTestingTool.result.openExportedReport(projectPath, exportedReportPath);
+
+      if (result.ok) {
+        setReportActionMessage('Report opened successfully.');
+      } else {
+        setReportActionError(result.error);
+      }
+    } catch (error) {
+      setReportActionError(error instanceof Error ? error.message : 'Could not open the report.');
+    } finally {
+      setOpeningReport(false);
+    }
+  };
+
+  const handleRevealExportedReport = async (): Promise<void> => {
+    if (!selectedResult || !exportedReportPath) {
+      return;
+    }
+
+    setRevealingReport(true);
+    setReportActionMessage(null);
+    setReportActionError(null);
+
+    try {
+      const result = await window.websiteTestingTool.result.revealExportedReport(projectPath, exportedReportPath);
+
+      if (result.ok) {
+        setReportActionMessage('Report revealed in folder.');
+      } else {
+        setReportActionError(result.error);
+      }
+    } catch (error) {
+      setReportActionError(error instanceof Error ? error.message : 'Could not reveal the report.');
+    } finally {
+      setRevealingReport(false);
     }
   };
 
@@ -388,9 +450,48 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
           </div>
 
           {(exportMessage || exportError) && (
-            <p className={exportError ? 'notice notice-error report-export-notice' : 'notice report-export-notice'}>
-              {exportError ?? exportMessage}
-            </p>
+            <div className="report-export-section">
+              <p className={exportError ? 'notice notice-error report-export-notice' : 'notice report-export-notice'}>
+                {exportError ?? exportMessage}
+              </p>
+
+              {exportedReportPath && !exportError && (
+                <div className="report-export-actions">
+                  <button
+                    type="button"
+                    className="inline-action"
+                    disabled={openingReport}
+                    onClick={() => {
+                      void handleOpenExportedReport();
+                    }}
+                  >
+                    {openingReport ? 'Opening…' : 'Open report'}
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-action"
+                    disabled={revealingReport}
+                    onClick={() => {
+                      void handleRevealExportedReport();
+                    }}
+                  >
+                    {revealingReport ? 'Revealing…' : 'Reveal in folder'}
+                  </button>
+                </div>
+              )}
+
+              {(reportActionMessage || reportActionError) && (
+                <p
+                  className={
+                    reportActionError
+                      ? 'notice notice-error report-export-notice'
+                      : 'notice report-export-notice'
+                  }
+                >
+                  {reportActionError ?? reportActionMessage}
+                </p>
+              )}
+            </div>
           )}
 
           <dl className="report-metadata">
