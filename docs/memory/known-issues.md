@@ -16,6 +16,7 @@ Last updated: 2026-05-08
 - Failure screenshots, browser console messages, page errors, request failures, and compact HTTP errors now appear in Results diagnostics, but traces, full HAR/network captures, and richer artifact navigation are still absent for some real QA workflows.
 - Network evidence is intentionally compact and selective. Successful 2xx/3xx responses are not captured, and no headers or bodies are stored yet.
 - HTML report export is now followed by safe open/reveal actions that do not expose arbitrary filesystem browsing. Reports are read-only presentation of captured evidence; screenshot artifacts remain as relative path text only.
+- The CLI runner (`src/cli/runTest.ts`) is a thin wrapper around existing runner and storage modules. It does not bundle Playwright browsers, does not support suites/tags/parallel execution, and does not allow custom output paths. Reports are always written to the project's `reports/` directory.
 - Run results now support historical `stepSnapshots` to preserve target, value, and timeout details as they existed at run time. Older run results without snapshots still fall back to reconstructing details from the current saved test case.
 - The accepted Electron stack still carries app-size and security-hardening costs that need ongoing review.
 - Fedora remains workable for development, but final packaging and runtime validation still depend on Windows sessions.

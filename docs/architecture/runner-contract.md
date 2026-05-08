@@ -250,6 +250,7 @@ Example: `artifacts/screenshots/run_abc123/step-2-failure.png`
 - Evidence storage is capped to keep runs compact: currently 100 console messages, 50 page errors, 50 network failures, and 50 HTTP errors.
 - Saved run results can be exported later to `{projectPath}/reports/report-{runId}.html` through a separate results workflow. Runner execution itself does not write HTML reports.
 - Saved run results can also be exported as JUnit XML to `{projectPath}/reports/junit-{runId}.xml` through the same results workflow. The JUnit report maps each step result to a `<testcase>` element with `<failure>`, `<error>`, or `<skipped>` children, and includes run metadata plus browser evidence counts in `<system-out>`.
+- A minimal CLI runner (`src/cli/runTest.ts`) wraps the same runner and storage modules for command-line and CI use. It accepts a project path and test identifier, runs the test, saves the JSON result, and optionally exports JUnit XML (`--junit`) and HTML (`--html`) reports. Exit codes follow the convention: 0 for passed, 1 for failed/error, 2 for invalid usage. See `docs/usage/cli-runner.md` for full usage details.
 
 ## 7. Runner Lifecycle
 

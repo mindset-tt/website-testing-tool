@@ -15,7 +15,8 @@
     "test": "vitest run --passWithNoTests",
     "icon:generate": "node scripts/generate-app-icon.mjs",
     "package:win": "npm run build && electron-builder --win=nsis:x64 --win=portable:x64",
-    "package:win:portable": "npm run build && electron-builder --win=portable:x64"
+    "package:win:portable": "npm run build && electron-builder --win=portable:x64",
+    "cli": "tsx src/cli/runTest.ts"
   },
   "engines": {
     "node": ">=22.12.0",
@@ -40,6 +41,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.2",
     "vite": "^7.3.2",

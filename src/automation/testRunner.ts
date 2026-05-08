@@ -16,10 +16,11 @@ interface RunnerOptions {
   readonly testCase: TestCase;
   readonly projectPath: string;
   readonly browserName?: string;
+  readonly headed?: boolean;
 }
 
 export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
-  const { testCase, projectPath } = options;
+  const { testCase, projectPath, headed = false } = options;
   const runId = randomUUID();
   const startedAt = new Date().toISOString();
 
@@ -34,7 +35,7 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
   try {
     await assertChromiumAvailable('run the selected test');
 
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: !headed });
     const page = await browser.newPage();
     attachRunDiagnostics(page, evidenceCollector, () => currentStepIndex);
     const stepResults: StepResult[] = [];
