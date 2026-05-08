@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 import type { RunResult, TestStep } from '../src/shared/project-schema';
 import {
   buildFailureSummary,
+  formatBrowserEvidenceLocation,
+  getBrowserEvidenceCounts,
+  getConsoleMessagesForDisplay,
   getFailureScreenshotPath,
+  getPageErrorStackPreview,
+  getPageErrorsForDisplay,
   getPrimaryFailureStep,
   getStepDefinitionForResult,
   getStepSnapshotForResult
@@ -63,6 +68,43 @@ const sampleSteps: readonly TestStep[] = [
   }
 ];
 
+const sampleRunResultWithBrowserEvidence: RunResult = {
+  ...sampleRunResult,
+  consoleMessages: [
+    {
+      timestamp: '2026-05-07T10:00:01.000Z',
+      type: 'log',
+      text: 'Booting checkout page.',
+      location: {
+        url: 'https://example.com/app.js',
+        lineNumber: 9,
+        columnNumber: 3
+      }
+    },
+    {
+      timestamp: '2026-05-07T10:00:02.000Z',
+      type: 'warning',
+      text: 'Slow network response.',
+      relatedStepIndex: 1
+    },
+    {
+      timestamp: '2026-05-07T10:00:03.000Z',
+      type: 'error',
+      text: 'Checkout widget crashed.',
+      relatedStepIndex: 1
+    }
+  ],
+  pageErrors: [
+    {
+      timestamp: '2026-05-07T10:00:04.000Z',
+      message: 'Cannot read properties of undefined.',
+      name: 'TypeError',
+      stack: 'TypeError: Cannot read properties of undefined.\n    at app.js:24:2\n    at app.js:28:5',
+      relatedStepIndex: 1
+    }
+  ]
+};
+
 describe('result diagnostics helpers', () => {
   it('finds the first failed or error step result', () => {
     expect(getPrimaryFailureStep(sampleRunResult)?.stepId).toBe('step_2');
@@ -79,8 +121,8 @@ describe('result diagnostics helpers', () => {
   });
 
   it('builds a readable failure summary with step context', () => {
-    const summary = buildFailureSummary(sampleRunResult, {
-      stepResult: getPrimaryFailureStep(sampleRunResult),
+    const summary = buildFailureSummary(sampleRunResultWithBrowserEvidence, {
+      stepResult: getPrimaryFailureStep(sampleRunResultWithBrowserEvidence),
       testStep: sampleSteps[1]
     });
 
@@ -93,8 +135,11 @@ describe('result diagnostics helpers', () => {
     expect(summary).toContain('Target: [data-testid="status"]');
     expect(summary).toContain('Expected value: Confirmed');
     expect(summary).toContain('Timeout: 5000ms');
+    expect(summary).toContain('Console messages: 3 total (2 warnings/errors)');
+    expect(summary).toContain('Page errors: 1');
     expect(summary).toContain('Error: Expected text "Confirmed" not found');
     expect(summary).toContain('Screenshot: artifacts/screenshots/run_123/step-1-failure.png');
+    expect(summary).not.toContain('Checkout widget crashed.');
   });
 
   it('builds a safe error summary when no failed step details were recorded', () => {
@@ -110,6 +155,39 @@ describe('result diagnostics helpers', () => {
     expect(summary).toContain('Type: Not recorded');
     expect(summary).toContain('Error: No detailed error message was recorded for this run.');
     expect(summary).not.toContain('Screenshot:');
+  });
+});
+
+describe('browser evidence diagnostics', () => {
+  it('counts browser evidence and prefers warning/error console entries for display', () => {
+    const counts = getBrowserEvidenceCounts(sampleRunResultWithBrowserEvidence);
+    const consoleMessages = getConsoleMessagesForDisplay(sampleRunResultWithBrowserEvidence, 2);
+
+    expect(counts).toEqual({
+      consoleMessages: 3,
+      consoleWarningsOrErrors: 2,
+      pageErrors: 1
+    });
+    expect(consoleMessages.map((message) => message.type)).toEqual(['error', 'warning']);
+  });
+
+  it('formats a safe browser evidence location string', () => {
+    const location = formatBrowserEvidenceLocation(
+      sampleRunResultWithBrowserEvidence.consoleMessages?.[0]?.location
+    );
+
+    expect(location).toBe('https://example.com/app.js:10:4');
+  });
+
+  it('returns the latest page errors and a compact stack preview', () => {
+    const pageErrors = getPageErrorsForDisplay(sampleRunResultWithBrowserEvidence, 1);
+    const stackPreview = getPageErrorStackPreview(pageErrors[0]);
+
+    expect(pageErrors).toHaveLength(1);
+    expect(pageErrors[0]?.message).toBe('Cannot read properties of undefined.');
+    expect(stackPreview).toBe(
+      'TypeError: Cannot read properties of undefined. |     at app.js:24:2'
+    );
   });
 });
 

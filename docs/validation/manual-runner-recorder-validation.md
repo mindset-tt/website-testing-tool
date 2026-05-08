@@ -1,6 +1,6 @@
 # Manual Runner & Recorder Validation
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
 This document describes how to manually validate the runner and recorder features in the current build.
 
@@ -108,7 +108,9 @@ The JSON contains:
 - `startedAt`, `finishedAt`, `durationMs`
 - `stepResults` array with per-step status, timing, and error details
 - `failureScreenshotPath` (relative path, only on failure)
-- `stepSnapshots` array with targeted historical step details for older run result diagnostics
+- optional `consoleMessages` array with timestamp, type, text, safe location details, and optional related step index
+- optional `pageErrors` array with timestamp, message, optional name/stack, and optional related step index
+- `stepSnapshots` array with targeted historical step details captured at run time
 
 ## Inspecting Failure Screenshot Path
 
@@ -133,13 +135,24 @@ The path is shown in the run result UI and stored in the result JSON.
 4. Confirm the error message is readable and no raw stack trace is shown in the normal UI.
 5. Confirm the screenshot path remains visible and the preview still loads when a screenshot exists.
 
+## Inspecting Browser Evidence
+
+1. Run or open a result that produced browser console messages or unhandled page errors.
+2. Select the run in the **Results** section.
+3. Confirm a compact **Browser evidence** section appears only when evidence exists.
+4. Confirm the section shows counts for console messages, warnings/errors, and page errors.
+5. Confirm the console list prefers recent warnings/errors when present and stays compact.
+6. Confirm page errors show readable message text and compact stack/name context without dumping huge raw logs.
+7. Confirm runs with no console or page evidence do not show an empty browser evidence panel.
+
 ## Copying A Failure Summary
 
 1. Open a failed or error run in the **Results** section.
 2. Click **Copy failure summary**.
 3. Confirm the app shows a success message.
 4. Paste the clipboard contents into a text editor.
-5. Confirm the summary includes the test name or ID, run status, browser, duration, failed step details, error message, and screenshot path when present.
+5. Confirm the summary includes the test name or ID, run status, browser, duration, failed step details, browser evidence counts when present, error message, and screenshot path when present.
+6. Confirm the clipboard summary does not dump full console logs or full page-error stacks.
 
 ## Starting Recording
 
@@ -173,8 +186,8 @@ The path is shown in the run result UI and stored in the result JSON.
 | Run passing test | Green PASSED badge, result JSON in `results/` |
 | Run failing test | Red FAILED badge, screenshot in `artifacts/screenshots/` |
 | View failed result in Results | Screenshot path stays visible and a preview loads when the PNG still exists |
-| Inspect failed result details | Failure summary card shows step number, label, type, error, and saved step context when available |
-| Copy failure summary | Clipboard gets a compact plain-text failure summary with no JSON dump or absolute artifact path |
+| Inspect failed result details | Failure summary card shows step number, label, type, error, saved step context when available, and compact browser evidence when it exists |
+| Copy failure summary | Clipboard gets a compact plain-text failure summary with browser evidence counts but no JSON dump, full logs, or absolute artifact path |
 | Run test with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
 | Start recording | Chromium window opens, status shows "Recording" |
 | Start recording with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
@@ -190,5 +203,5 @@ The path is shown in the run result UI and stored in the result JSON.
 - **Fedora fallback:** Playwright uses Ubuntu 24.04 fallback build on Fedora.
 - **File names not human-readable:** Test case file names are derived from test IDs (UUID-based).
 - **No project delete or folder rename:** Projects can be renamed in metadata only, but not deleted or renamed on disk through the UI.
-- **Failure evidence is still minimal:** The Results panel can now preview the failure screenshot, but traces, console logs, and network logs are still out of scope for MVP.
-- **Historical detail drift:** Target, value, and timeout details in historical failed runs are reconstructed from the current saved test case, so they can drift if the test was edited after the run.
+- **Failure evidence is still MVP-limited:** The Results panel now shows failure screenshots, browser console messages, and page errors, but traces, request-failure logs, videos, and network captures are still out of scope.
+- **Older historical results may be thinner:** Older run result files created before step snapshots or browser evidence existed will still load, but they may lack historical step detail or browser evidence sections.

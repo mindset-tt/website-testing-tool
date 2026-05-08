@@ -1,14 +1,111 @@
-import type { RunResult, StepResult, StepSnapshot, TestStep } from './project-schema';
+import type {
+  BrowserConsoleLocation,
+  BrowserConsoleMessage,
+  PageErrorRecord,
+  RunResult,
+  StepResult,
+  StepSnapshot,
+  TestStep
+} from './project-schema';
 
 export interface FailureSummaryOptions {
   readonly stepResult?: StepResult | null;
   readonly testStep?: TestStep | null;
 }
 
+export interface BrowserEvidenceCounts {
+  readonly consoleMessages: number;
+  readonly consoleWarningsOrErrors: number;
+  readonly pageErrors: number;
+}
+
+const RELEVANT_CONSOLE_TYPES = new Set(['warning', 'error', 'assert']);
+
 export function getPrimaryFailureStep(runResult: RunResult): StepResult | null {
   return runResult.stepResults.find((stepResult) =>
     stepResult.status === 'failed' || stepResult.status === 'error'
   ) ?? null;
+}
+
+export function hasBrowserEvidence(runResult: RunResult): boolean {
+  return (runResult.consoleMessages?.length ?? 0) > 0 || (runResult.pageErrors?.length ?? 0) > 0;
+}
+
+export function getBrowserEvidenceCounts(runResult: RunResult): BrowserEvidenceCounts {
+  const consoleMessages = runResult.consoleMessages ?? [];
+  const pageErrors = runResult.pageErrors ?? [];
+
+  return {
+    consoleMessages: consoleMessages.length,
+    consoleWarningsOrErrors: consoleMessages.filter(isConsoleWarningOrError).length,
+    pageErrors: pageErrors.length
+  };
+}
+
+export function isConsoleWarningOrError(message: BrowserConsoleMessage): boolean {
+  return RELEVANT_CONSOLE_TYPES.has(message.type.toLowerCase());
+}
+
+export function getConsoleMessagesForDisplay(
+  runResult: RunResult,
+  limit = 4
+): readonly BrowserConsoleMessage[] {
+  const consoleMessages = runResult.consoleMessages ?? [];
+
+  if (consoleMessages.length === 0 || limit <= 0) {
+    return [];
+  }
+
+  const relevantMessages = consoleMessages.filter(isConsoleWarningOrError);
+  const source = relevantMessages.length > 0 ? relevantMessages : consoleMessages;
+
+  return source.slice(-limit).reverse();
+}
+
+export function getPageErrorsForDisplay(runResult: RunResult, limit = 3): readonly PageErrorRecord[] {
+  const pageErrors = runResult.pageErrors ?? [];
+
+  if (pageErrors.length === 0 || limit <= 0) {
+    return [];
+  }
+
+  return pageErrors.slice(-limit).reverse();
+}
+
+export function formatBrowserEvidenceLocation(location: BrowserConsoleLocation | null | undefined): string | null {
+  if (!location) {
+    return null;
+  }
+
+  const lineNumber = location.lineNumber === undefined ? null : location.lineNumber + 1;
+  const columnNumber = location.columnNumber === undefined ? null : location.columnNumber + 1;
+  const position = lineNumber === null
+    ? null
+    : columnNumber === null
+      ? `:${lineNumber}`
+      : `:${lineNumber}:${columnNumber}`;
+
+  if (location.url && position) {
+    return `${location.url}${position}`;
+  }
+
+  if (location.url) {
+    return location.url;
+  }
+
+  if (position) {
+    return `line${position}`;
+  }
+
+  return null;
+}
+
+export function getPageErrorStackPreview(pageError: PageErrorRecord): string | null {
+  if (!pageError.stack) {
+    return null;
+  }
+
+  return pageError.stack.split(/\r?\n/, 2).join(' | ');
 }
 
 /**
@@ -114,7 +211,22 @@ export function buildFailureSummary(
     lines.push('Saved step context: unavailable');
   }
 
-  lines.push('', 'Evidence', `Error: ${errorMessage}`);
+  const browserEvidenceCounts = getBrowserEvidenceCounts(runResult);
+
+  lines.push('', 'Evidence');
+
+  if (browserEvidenceCounts.consoleMessages > 0) {
+    lines.push(
+      `Console messages: ${browserEvidenceCounts.consoleMessages} total` +
+      ` (${browserEvidenceCounts.consoleWarningsOrErrors} warnings/errors)`
+    );
+  }
+
+  if (browserEvidenceCounts.pageErrors > 0) {
+    lines.push(`Page errors: ${browserEvidenceCounts.pageErrors}`);
+  }
+
+  lines.push(`Error: ${errorMessage}`);
 
   if (screenshotPath) {
     lines.push(`Screenshot: ${screenshotPath}`);

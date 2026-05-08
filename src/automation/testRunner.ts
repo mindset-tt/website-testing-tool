@@ -8,6 +8,7 @@ import type { Browser, Page } from 'playwright';
 import type { TestCase, TestStep, RunResult, StepResult, StepStatus } from '../shared/project-schema';
 import { RUN_RESULT_SCHEMA_VERSION, validateRunResult, createStepSnapshot } from '../shared/project-schema';
 import { assertChromiumAvailable, normalizeChromiumLaunchError } from './playwrightBrowser';
+import { createRunEvidenceCollector } from './runEvidence';
 
 const DEFAULT_TIMEOUT_MS = 30000;
 
@@ -27,12 +28,15 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
   }
 
   let browser: Browser | null = null;
+  let currentStepIndex: number | undefined;
+  const evidenceCollector = createRunEvidenceCollector();
 
   try {
     await assertChromiumAvailable('run the selected test');
 
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
+    attachRunDiagnostics(page, evidenceCollector, () => currentStepIndex);
     const stepResults: StepResult[] = [];
     let runFailed = false;
     let failureScreenshotPath: string | undefined;
@@ -43,7 +47,15 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
         continue;
       }
 
-      const stepResult = await executeStep(page, testCase.steps[i], i, projectPath, runId);
+      let stepResult: StepResult;
+
+      currentStepIndex = i;
+
+      try {
+        stepResult = await executeStep(page, testCase.steps[i], i, projectPath, runId);
+      } finally {
+        currentStepIndex = undefined;
+      }
 
       stepResults.push(stepResult);
 
@@ -72,6 +84,8 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
       durationMs,
       stepResults,
       failureScreenshotPath,
+      consoleMessages: evidenceCollector.getConsoleMessages(),
+      pageErrors: evidenceCollector.getPageErrors(),
       stepSnapshots: testCase.steps.map(createStepSnapshot)
     };
 
@@ -102,6 +116,8 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
       finishedAt,
       durationMs,
       stepResults: [],
+      consoleMessages: evidenceCollector.getConsoleMessages(),
+      pageErrors: evidenceCollector.getPageErrors(),
       stepSnapshots: testCase.steps.map(createStepSnapshot)
     };
 
@@ -119,6 +135,40 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
       });
     }
   }
+}
+
+function attachRunDiagnostics(
+  page: Page,
+  evidenceCollector: ReturnType<typeof createRunEvidenceCollector>,
+  getCurrentStepIndex: () => number | undefined
+): void {
+  page.on('console', (message) => {
+    try {
+      evidenceCollector.recordConsoleMessage({
+        timestamp: new Date().toISOString(),
+        type: message.type(),
+        text: message.text(),
+        location: message.location(),
+        relatedStepIndex: getCurrentStepIndex()
+      });
+    } catch {
+      // Console capture is best-effort and must not fail the run.
+    }
+  });
+
+  page.on('pageerror', (error) => {
+    try {
+      evidenceCollector.recordPageError({
+        timestamp: new Date().toISOString(),
+        message: error instanceof Error ? error.message : String(error),
+        name: error instanceof Error ? error.name : undefined,
+        stack: error instanceof Error ? error.stack : undefined,
+        relatedStepIndex: getCurrentStepIndex()
+      });
+    } catch {
+      // Page error capture is best-effort and must not fail the run.
+    }
+  });
 }
 
 async function executeStep(

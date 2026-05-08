@@ -1,10 +1,10 @@
 # Current State
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
 ## Summary
 
-The repository now has a working Electron + React + TypeScript MVP workbench with local project storage, recent-project quick-open, project rename, manual step editing, test-level management, recorder, runner, results, and documented Windows x64 packaging. The packaged missing-Chromium path is validated on the current Windows portable build, so MVP product capability work is back on workflow polish. Final publisher/legal metadata remains deferred and does not block feature development.
+The repository now has a working Electron + React + TypeScript MVP workbench with local project storage, recent-project quick-open, project rename, manual step editing, test-level management, recorder, runner, results, and documented Windows x64 packaging. Run results now capture browser console messages and page errors in addition to failure screenshots and step snapshots, so failed-run diagnostics are more explainable without changing schemas or packaging. Final publisher/legal metadata remains deferred and does not block feature development.
 
 ## Current Facts
 
@@ -35,13 +35,16 @@ The repository now has a working Electron + React + TypeScript MVP workbench wit
 - The Results panel now previews failure screenshots for selected failed runs through a preload-safe data URL bridge. The renderer never reads project files directly, and main-process validation only allows `.png` files inside the selected project's `artifacts/screenshots` tree.
 - The Results panel now shows a compact failure summary card for failed and error runs, and it can copy a plain-text failure summary through the browser clipboard API when available.
 - Run results now capture `stepSnapshots` as part of the saved result when the runner supports it, so target, value, timeout, and notes can remain historically accurate even if the test case edits later.
+- Run results now also capture optional `consoleMessages` and `pageErrors` arrays. Collection is best-effort, messages are truncated, console/page-error counts are capped, and older result files without those fields remain valid with no migration.
+- The Results panel now shows a compact **Browser evidence** section for selected runs when browser evidence exists. It shows console message count, warning/error count, page-error count, and a small list of the most relevant recent entries.
+- Copied failure summaries now include browser evidence counts when present, but they do not dump full console logs or full page-error stacks into the clipboard.
 - The 2026-05-07 packaged portable EXE validation confirmed the missing-Chromium path end to end: the app opens, Tests and Recorder show the missing-browser note, Run and Start Recording show user-safe install guidance, no raw Playwright stack trace is shown in the normal UI, and the app stays running.
 - The packaged validation used the portable EXE plus a temporary user-data directory and a CDP attachment. In this Codex Windows shell, `ELECTRON_RUN_AS_NODE=1` had to be cleared before launching any Electron or packaged-app process.
 - During the Windows missing-Chromium simulation, the local Playwright cache folder `C:\Users\khamp\AppData\Local\ms-playwright\chromium-1217` was renamed first, but the folder did not survive the probe intact and had to be restored with `npx playwright install chromium`.
 
 ## Current Focus
 
-Packaged missing-Chromium validation, project rename, recent-project quick-open, forget-recent cleanup, test-level management, failure screenshot preview, and failure summary copy are complete on the current Windows portable build. The next smallest valuable work is to continue runner and results hardening with more stable historical failure context and richer evidence handling now that the core local workspace flows are in place. Final publisher/legal metadata remains deferred and should not block MVP feature work.
+Packaged missing-Chromium validation, project rename, recent-project quick-open, forget-recent cleanup, test-level management, failure screenshot preview, failure summary copy, historical step snapshots, and compact browser evidence capture are complete on the current Windows portable build. The next smallest valuable work is to continue runner and results hardening with the next layer of browser/network evidence or artifact navigation now that core failed-run context is stronger. Final publisher/legal metadata remains deferred and should not block MVP feature work.
 
 ## Important Constraint
 

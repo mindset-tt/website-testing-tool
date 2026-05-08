@@ -1,6 +1,6 @@
 # Architecture Summary
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
 ## Status
 
@@ -28,6 +28,8 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 - The Results panel now previews failure screenshots through a validated preload/main-process bridge that only allows `.png` files inside the selected project's `artifacts/screenshots` directory.
 - The Results panel now also renders a compact failed-step summary and can copy a plain-text failure summary for failed and error runs by using the browser clipboard API from the renderer.
 - Run results now capture historical `stepSnapshots`, preserving the exact step target, value, timeout, and notes at run time while still falling back safely for older results.
+- Run results now also capture capped browser console messages and page errors through Playwright `page.on('console')` and `page.on('pageerror')` listeners. Those fields are optional so older saved results remain valid with no migration.
+- The Results panel now renders a compact Browser evidence section for selected runs when evidence exists, showing counts plus a small list of the latest relevant console/page-error entries.
 - Project metadata rename now updates only `project.json` `name` and `updatedAt`, preserving the stable `projectId`, `createdAt`, and folder path.
 - Recent projects are now cached outside project folders in Electron `userData` as `recent-projects.json`, with a small deduplicated quick-open list for the no-project startup state.
 - The no-project startup state now supports a non-destructive forget action for recent-project entries. It removes only the matching cache entry by project path and does not touch project folders or project metadata.
@@ -39,8 +41,9 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 
 - Electron size and security hardening remain ongoing costs.
 - Playwright browser discovery, first-run install behavior, and offline packaging strategy are still open product risks because the current fix is clear messaging, not a polished install flow.
+- Results diagnostics are stronger now, but richer browser/network evidence such as request failures, traces, or navigable artifact bundles are still open product work.
 - Final commercial publisher metadata, code signing, and update strategy are still undecided.
 
 ## Next Work
 
-Continue improving runner and results diagnostics now that the core local project and recent-workspace management flows are covered, starting with more stable historical failure context and then richer evidence handling, while keeping the accepted local-first architecture intact.
+Continue improving runner and results diagnostics now that historical failed-step context plus console/page-error evidence are covered, starting with the next compact high-signal evidence layer such as request failures, while keeping the accepted local-first architecture intact.

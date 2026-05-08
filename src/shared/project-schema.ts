@@ -93,6 +93,28 @@ export interface StepSnapshot {
   readonly notes?: string;
 }
 
+export interface BrowserConsoleLocation {
+  readonly url?: string;
+  readonly lineNumber?: number;
+  readonly columnNumber?: number;
+}
+
+export interface BrowserConsoleMessage {
+  readonly timestamp: string;
+  readonly type: string;
+  readonly text: string;
+  readonly location?: BrowserConsoleLocation;
+  readonly relatedStepIndex?: number;
+}
+
+export interface PageErrorRecord {
+  readonly timestamp: string;
+  readonly message: string;
+  readonly name?: string;
+  readonly stack?: string;
+  readonly relatedStepIndex?: number;
+}
+
 export interface RunResult {
   readonly schemaVersion: typeof RUN_RESULT_SCHEMA_VERSION;
   readonly runId: string;
@@ -105,6 +127,16 @@ export interface RunResult {
   readonly durationMs: number;
   readonly stepResults: readonly StepResult[];
   readonly failureScreenshotPath?: string;
+  /**
+   * Browser console messages captured during the run.
+   * Absent for older result files or runs that recorded no messages.
+   */
+  readonly consoleMessages?: readonly BrowserConsoleMessage[];
+  /**
+   * Unhandled page errors captured during the run.
+   * Absent for older result files or runs that recorded no page errors.
+   */
+  readonly pageErrors?: readonly PageErrorRecord[];
   /**
    * Historical step snapshots captured at run time.
    * Present for results saved by runner versions that support snapshots.
@@ -293,6 +325,30 @@ export function validateRunResult(value: unknown): string[] {
     errors.push('Run result failureScreenshotPath must be a string when present.');
   }
 
+  if (value.consoleMessages !== undefined) {
+    if (!Array.isArray(value.consoleMessages)) {
+      errors.push('Run result consoleMessages must be an array when present.');
+    } else {
+      for (const [index, message] of value.consoleMessages.entries()) {
+        for (const error of validateBrowserConsoleMessage(message)) {
+          errors.push(`Console message ${index + 1}: ${error}`);
+        }
+      }
+    }
+  }
+
+  if (value.pageErrors !== undefined) {
+    if (!Array.isArray(value.pageErrors)) {
+      errors.push('Run result pageErrors must be an array when present.');
+    } else {
+      for (const [index, pageError] of value.pageErrors.entries()) {
+        for (const error of validatePageErrorRecord(pageError)) {
+          errors.push(`Page error ${index + 1}: ${error}`);
+        }
+      }
+    }
+  }
+
   if (value.stepSnapshots !== undefined) {
     if (!Array.isArray(value.stepSnapshots)) {
       errors.push('Run result stepSnapshots must be an array when present.');
@@ -353,6 +409,91 @@ export function validateStepResult(value: unknown): string[] {
 
   if (value.screenshotPath !== undefined && typeof value.screenshotPath !== 'string') {
     errors.push('Step result screenshotPath must be a string when present.');
+  }
+
+  return errors;
+}
+
+export function validateBrowserConsoleMessage(value: unknown): string[] {
+  if (!isRecord(value)) {
+    return ['Browser console message must be an object.'];
+  }
+
+  const errors: string[] = [];
+
+  for (const key of ['timestamp', 'type', 'text'] as const) {
+    if (!isNonEmptyString(value[key])) {
+      errors.push(`${key} must be a non-empty string.`);
+    }
+  }
+
+  if (value.location !== undefined) {
+    for (const error of validateBrowserConsoleLocation(value.location)) {
+      errors.push(`location ${error}`);
+    }
+  }
+
+  if (
+    value.relatedStepIndex !== undefined &&
+    (typeof value.relatedStepIndex !== 'number' ||
+      !Number.isInteger(value.relatedStepIndex) ||
+      value.relatedStepIndex < 0)
+  ) {
+    errors.push('relatedStepIndex must be a non-negative integer when present.');
+  }
+
+  return errors;
+}
+
+export function validateBrowserConsoleLocation(value: unknown): string[] {
+  if (!isRecord(value)) {
+    return ['must be an object.'];
+  }
+
+  const errors: string[] = [];
+
+  if (value.url !== undefined && typeof value.url !== 'string') {
+    errors.push('url must be a string when present.');
+  }
+
+  for (const key of ['lineNumber', 'columnNumber'] as const) {
+    if (
+      value[key] !== undefined &&
+      (typeof value[key] !== 'number' || !Number.isInteger(value[key]) || value[key] < 0)
+    ) {
+      errors.push(`${key} must be a non-negative integer when present.`);
+    }
+  }
+
+  return errors;
+}
+
+export function validatePageErrorRecord(value: unknown): string[] {
+  if (!isRecord(value)) {
+    return ['Page error record must be an object.'];
+  }
+
+  const errors: string[] = [];
+
+  for (const key of ['timestamp', 'message'] as const) {
+    if (!isNonEmptyString(value[key])) {
+      errors.push(`${key} must be a non-empty string.`);
+    }
+  }
+
+  for (const key of ['name', 'stack'] as const) {
+    if (value[key] !== undefined && typeof value[key] !== 'string') {
+      errors.push(`${key} must be a string when present.`);
+    }
+  }
+
+  if (
+    value.relatedStepIndex !== undefined &&
+    (typeof value.relatedStepIndex !== 'number' ||
+      !Number.isInteger(value.relatedStepIndex) ||
+      value.relatedStepIndex < 0)
+  ) {
+    errors.push('relatedStepIndex must be a non-negative integer when present.');
   }
 
   return errors;

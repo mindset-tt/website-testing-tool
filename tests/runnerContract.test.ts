@@ -2,11 +2,19 @@ import { describe, expect, it } from 'vitest';
 
 import {
   RUN_RESULT_SCHEMA_VERSION,
+  validateBrowserConsoleMessage,
+  validatePageErrorRecord,
   validateRunResult,
   validateStepResult,
   validateStepSnapshot
 } from '../src/shared/project-schema';
-import type { RunResult, StepResult, StepSnapshot } from '../src/shared/project-schema';
+import type {
+  BrowserConsoleMessage,
+  PageErrorRecord,
+  RunResult,
+  StepResult,
+  StepSnapshot
+} from '../src/shared/project-schema';
 
 describe('validateStepResult', () => {
   it('accepts a valid passed step result', () => {
@@ -108,6 +116,67 @@ describe('validateStepResult', () => {
   });
 });
 
+describe('validateBrowserConsoleMessage', () => {
+  it('accepts a browser console message with location and related step', () => {
+    const message: BrowserConsoleMessage = {
+      timestamp: '2026-05-07T10:00:02.000Z',
+      type: 'warning',
+      text: 'Slow network request detected.',
+      location: {
+        url: 'https://example.com/app.js',
+        lineNumber: 14,
+        columnNumber: 7
+      },
+      relatedStepIndex: 1
+    };
+
+    expect(validateBrowserConsoleMessage(message)).toEqual([]);
+  });
+
+  it('rejects a browser console message with invalid location fields', () => {
+    const message = {
+      timestamp: '2026-05-07T10:00:02.000Z',
+      type: 'warning',
+      text: 'Problem',
+      location: {
+        url: 123,
+        lineNumber: -1
+      }
+    };
+
+    const errors = validateBrowserConsoleMessage(message);
+
+    expect(errors.some((e) => e.includes('location url'))).toBe(true);
+    expect(errors.some((e) => e.includes('location lineNumber'))).toBe(true);
+  });
+});
+
+describe('validatePageErrorRecord', () => {
+  it('accepts a page error record with name, stack, and related step', () => {
+    const pageError: PageErrorRecord = {
+      timestamp: '2026-05-07T10:00:03.000Z',
+      message: 'Cannot read properties of undefined.',
+      name: 'TypeError',
+      stack: 'TypeError: Cannot read properties of undefined.\n    at app.js:2:10',
+      relatedStepIndex: 1
+    };
+
+    expect(validatePageErrorRecord(pageError)).toEqual([]);
+  });
+
+  it('rejects a page error record with invalid relatedStepIndex', () => {
+    const pageError = {
+      timestamp: '2026-05-07T10:00:03.000Z',
+      message: 'Boom',
+      relatedStepIndex: -1
+    };
+
+    const errors = validatePageErrorRecord(pageError);
+
+    expect(errors.some((e) => e.includes('relatedStepIndex'))).toBe(true);
+  });
+});
+
 describe('validateRunResult', () => {
   it('accepts a valid passed run result', () => {
     const runResult: RunResult = {
@@ -161,6 +230,45 @@ describe('validateRunResult', () => {
           durationMs: 5000,
           errorMessage: 'Element not found',
           screenshotPath: 'artifacts/screenshots/run_abc/step-0-failure.png'
+        }
+      ]
+    };
+
+    expect(validateRunResult(runResult)).toEqual([]);
+  });
+
+  it('accepts a run result with optional browser evidence arrays', () => {
+    const runResult: RunResult = {
+      schemaVersion: RUN_RESULT_SCHEMA_VERSION,
+      runId: 'run_browser_evidence',
+      testId: 'test_xyz',
+      testName: 'Smoke test',
+      browserName: 'chromium',
+      status: 'failed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:10.000Z',
+      durationMs: 10000,
+      stepResults: [],
+      consoleMessages: [
+        {
+          timestamp: '2026-05-07T10:00:03.000Z',
+          type: 'error',
+          text: 'Failed to load resource.',
+          location: {
+            url: 'https://example.com/app.js',
+            lineNumber: 1,
+            columnNumber: 2
+          },
+          relatedStepIndex: 0
+        }
+      ],
+      pageErrors: [
+        {
+          timestamp: '2026-05-07T10:00:04.000Z',
+          message: 'Unhandled TypeError',
+          name: 'TypeError',
+          stack: 'TypeError: Unhandled TypeError\n    at app.js:10:2',
+          relatedStepIndex: 0
         }
       ]
     };
@@ -223,6 +331,39 @@ describe('validateRunResult', () => {
     const errors = validateRunResult(runResult);
 
     expect(errors.some((e) => e.includes('testName'))).toBe(true);
+  });
+
+  it('rejects invalid browser evidence entries', () => {
+    const runResult = {
+      schemaVersion: RUN_RESULT_SCHEMA_VERSION,
+      runId: 'run_abc',
+      testId: 'test_xyz',
+      testName: 'Test',
+      browserName: 'chromium',
+      status: 'failed',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:00:10.000Z',
+      durationMs: 10000,
+      stepResults: [],
+      consoleMessages: [
+        {
+          timestamp: '',
+          type: '',
+          text: ''
+        }
+      ],
+      pageErrors: [
+        {
+          timestamp: '',
+          message: ''
+        }
+      ]
+    };
+
+    const errors = validateRunResult(runResult);
+
+    expect(errors.some((e) => e.includes('Console message 1'))).toBe(true);
+    expect(errors.some((e) => e.includes('Page error 1'))).toBe(true);
   });
 });
 

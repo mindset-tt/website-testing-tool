@@ -3,13 +3,26 @@ import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import { toTestCaseFileName } from '../../shared/project-schema';
-import type { RunResult, StepSnapshot, TestCase, TestStep } from '../../shared/project-schema';
+import type {
+  BrowserConsoleMessage,
+  PageErrorRecord,
+  RunResult,
+  StepSnapshot,
+  TestCase,
+  TestStep
+} from '../../shared/project-schema';
 import {
   buildFailureSummary,
+  formatBrowserEvidenceLocation,
   getFailureScreenshotPath,
   getPrimaryFailureStep,
+  getBrowserEvidenceCounts,
+  getConsoleMessagesForDisplay,
+  getPageErrorStackPreview,
+  getPageErrorsForDisplay,
   getStepDefinitionForResult,
-  getStepSnapshotForResult
+  getStepSnapshotForResult,
+  hasBrowserEvidence
 } from '../../shared/resultDiagnostics';
 
 interface ReportPanelProps {
@@ -55,6 +68,24 @@ function getSnapshotValueLabel(snapshot: StepSnapshot): string {
   return 'Value';
 }
 
+function formatEvidenceTimestamp(timestamp: string): string {
+  return new Date(timestamp).toLocaleTimeString();
+}
+
+function getConsoleEvidenceTone(message: BrowserConsoleMessage): 'danger' | 'warning' | 'neutral' {
+  const normalizedType = message.type.toLowerCase();
+
+  if (normalizedType === 'error' || normalizedType === 'assert') {
+    return 'danger';
+  }
+
+  if (normalizedType === 'warning') {
+    return 'warning';
+  }
+
+  return 'neutral';
+}
+
 export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const [results, setResults] = useState<readonly RunResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -79,6 +110,10 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
         testStep: failureTestStep
       })
     : null;
+  const browserEvidenceCounts = selectedResult ? getBrowserEvidenceCounts(selectedResult) : null;
+  const browserEvidenceVisible = selectedResult ? hasBrowserEvidence(selectedResult) : false;
+  const displayedConsoleMessages = selectedResult ? getConsoleMessagesForDisplay(selectedResult) : [];
+  const displayedPageErrors = selectedResult ? getPageErrorsForDisplay(selectedResult) : [];
 
   useEffect(() => {
     let cancelled = false;
@@ -470,6 +505,128 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
                   </div>
                 </section>
               </div>
+            </section>
+          )}
+
+          {browserEvidenceVisible && browserEvidenceCounts && (
+            <section className="report-browser-evidence" aria-label="Browser evidence">
+              <div className="report-browser-evidence-header">
+                <div>
+                  <p className="eyebrow">Browser evidence</p>
+                  <h4>Console and page signals captured during the run</h4>
+                </div>
+              </div>
+
+              <div className="report-browser-evidence-counts" aria-label="Browser evidence counts">
+                <div className="report-browser-evidence-count">
+                  <span className="report-browser-evidence-count-value">
+                    {browserEvidenceCounts.consoleMessages}
+                  </span>
+                  <span className="report-browser-evidence-count-label">Console messages</span>
+                </div>
+                <div className="report-browser-evidence-count">
+                  <span className="report-browser-evidence-count-value">
+                    {browserEvidenceCounts.consoleWarningsOrErrors}
+                  </span>
+                  <span className="report-browser-evidence-count-label">Warnings/errors</span>
+                </div>
+                <div className="report-browser-evidence-count">
+                  <span className="report-browser-evidence-count-value">
+                    {browserEvidenceCounts.pageErrors}
+                  </span>
+                  <span className="report-browser-evidence-count-label">Page errors</span>
+                </div>
+              </div>
+
+              {displayedConsoleMessages.length > 0 && (
+                <section className="report-browser-evidence-block" aria-label="Console messages">
+                  <div className="report-browser-evidence-block-header">
+                    <h5>Console messages</h5>
+                    <span className="report-browser-evidence-note">
+                      {browserEvidenceCounts.consoleWarningsOrErrors > 0
+                        ? 'Latest warnings and errors'
+                        : 'Latest messages'}
+                    </span>
+                  </div>
+                  <div className="report-browser-evidence-list">
+                    {displayedConsoleMessages.map((message, index) => {
+                      const location = formatBrowserEvidenceLocation(message.location);
+
+                      return (
+                        <article
+                          key={`${message.timestamp}-${message.type}-${index}`}
+                          className="report-browser-evidence-entry"
+                        >
+                          <div className="report-browser-evidence-entry-header">
+                            <span
+                              className={
+                                `report-browser-evidence-badge ` +
+                                `report-browser-evidence-badge-${getConsoleEvidenceTone(message)}`
+                              }
+                            >
+                              {message.type}
+                            </span>
+                            <span className="report-browser-evidence-meta">
+                              {formatEvidenceTimestamp(message.timestamp)}
+                            </span>
+                            {typeof message.relatedStepIndex === 'number' && (
+                              <span className="report-browser-evidence-meta">
+                                Step {message.relatedStepIndex + 1}
+                              </span>
+                            )}
+                          </div>
+                          <p className="report-browser-evidence-text">{message.text}</p>
+                          {location && (
+                            <p className="report-browser-evidence-location report-mono">{location}</p>
+                          )}
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {displayedPageErrors.length > 0 && (
+                <section className="report-browser-evidence-block" aria-label="Page errors">
+                  <div className="report-browser-evidence-block-header">
+                    <h5>Page errors</h5>
+                    <span className="report-browser-evidence-note">Latest errors</span>
+                  </div>
+                  <div className="report-browser-evidence-list">
+                    {displayedPageErrors.map((pageError: PageErrorRecord, index) => {
+                      const stackPreview = getPageErrorStackPreview(pageError);
+
+                      return (
+                        <article
+                          key={`${pageError.timestamp}-${pageError.message}-${index}`}
+                          className="report-browser-evidence-entry report-browser-evidence-entry-danger"
+                        >
+                          <div className="report-browser-evidence-entry-header">
+                            <span className="report-browser-evidence-badge report-browser-evidence-badge-danger">
+                              page error
+                            </span>
+                            <span className="report-browser-evidence-meta">
+                              {formatEvidenceTimestamp(pageError.timestamp)}
+                            </span>
+                            {typeof pageError.relatedStepIndex === 'number' && (
+                              <span className="report-browser-evidence-meta">
+                                Step {pageError.relatedStepIndex + 1}
+                              </span>
+                            )}
+                          </div>
+                          <p className="report-browser-evidence-text">{pageError.message}</p>
+                          {(pageError.name || stackPreview) && (
+                            <p className="report-browser-evidence-location report-mono">
+                              {pageError.name ?? 'Error'}
+                              {stackPreview ? ` - ${stackPreview}` : ''}
+                            </p>
+                          )}
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
             </section>
           )}
 

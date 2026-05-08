@@ -1,12 +1,12 @@
 # MVP Runner Contract
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
 This document defines the contract for the MVP test runner before Playwright is installed or any runner code is written. It is a design document, not implementation.
 
 ## 1. Purpose
 
-The runner takes a saved `TestCase` (with manually authored steps) and executes each step against a real browser using Playwright. It produces a structured `RunResult` saved to the project's `results/` directory and writes failure screenshots to `artifacts/screenshots/`.
+The runner takes a saved `TestCase` (with manually authored steps) and executes each step against a real browser using Playwright. It produces a structured `RunResult` saved to the project's `results/` directory, writes failure screenshots to `artifacts/screenshots/`, and captures compact browser-side evidence in the result JSON.
 
 ## 2. Runner Input
 
@@ -22,6 +22,7 @@ The runner is responsible for:
 - Launching a Playwright browser and page.
 - Executing each step in order.
 - Capturing a screenshot on the first failure.
+- Capturing capped browser console messages and page errors during the run.
 - Closing the browser after execution (success or failure).
 - Writing the `RunResult` to disk.
 
@@ -78,6 +79,8 @@ interface RunResult {
   readonly durationMs: number;
   readonly stepResults: readonly StepResult[];
   readonly failureScreenshotPath?: string;  // relative to project root, only on failure
+  readonly consoleMessages?: readonly BrowserConsoleMessage[]; // optional browser console evidence
+  readonly pageErrors?: readonly PageErrorRecord[]; // optional unhandled page errors
   readonly stepSnapshots?: readonly StepSnapshot[]; // historical test step data captured at run time
 }
 ```
@@ -125,10 +128,47 @@ interface StepSnapshot {
 }
 ```
 
+### `BrowserConsoleMessage`
+
+```typescript
+interface BrowserConsoleMessage {
+  readonly timestamp: string;      // ISO 8601
+  readonly type: string;           // e.g. "log" | "info" | "warning" | "error"
+  readonly text: string;           // truncated for safe UI display/storage
+  readonly location?: BrowserConsoleLocation;
+  readonly relatedStepIndex?: number; // optional 0-based step index when easy to associate
+}
+```
+
+### `BrowserConsoleLocation`
+
+```typescript
+interface BrowserConsoleLocation {
+  readonly url?: string;
+  readonly lineNumber?: number;    // 0-based from Playwright
+  readonly columnNumber?: number;  // 0-based from Playwright
+}
+```
+
+### `PageErrorRecord`
+
+```typescript
+interface PageErrorRecord {
+  readonly timestamp: string;      // ISO 8601
+  readonly message: string;        // truncated for safe UI display/storage
+  readonly name?: string;
+  readonly stack?: string;         // optional and truncated
+  readonly relatedStepIndex?: number; // optional 0-based step index when easy to associate
+}
+```
+
 MVP note:
 
 - `RunResult` now stores `stepSnapshots` when available.
+- `RunResult` can also store optional `consoleMessages` and `pageErrors`.
 - Snapshot data is captured at run time and preserved even if the saved test case changes later.
+- Console and page-error evidence are capped in memory before save to keep the result JSON compact.
+- Older run results remain valid when `consoleMessages`, `pageErrors`, or `stepSnapshots` are absent.
 - The Results UI prefers snapshot data for target/value/timeout details and falls back to the current test case only for older run results without snapshots.
 
 ### `StepStatus`
@@ -175,6 +215,8 @@ Example: `artifacts/screenshots/run_abc123/step-2-failure.png`
 - The screenshot directory is created on demand.
 - Renderer screenshot previews must be loaded through a validated main-process bridge. The renderer must not read arbitrary project files directly.
 - MVP screenshot previews are limited to `.png` files that resolve inside `{projectPath}/artifacts/screenshots/`.
+- Browser console messages and page errors are stored directly inside the `RunResult` JSON and are not written to separate files in MVP.
+- Evidence storage is capped to keep runs compact: currently 100 console messages and 50 page errors.
 
 ## 7. Runner Lifecycle
 
@@ -183,8 +225,10 @@ Example: `artifacts/screenshots/run_abc123/step-2-failure.png`
 2. Create run ID and result directory.
 3. Launch browser (Playwright).
 4. Create new page.
-5. For each step:
+5. Attach best-effort `page.on('console')` and `page.on('pageerror')` listeners.
+6. For each step:
    a. Record startedAt.
+   b. Track the current step index for optional evidence association.
    b. Execute step action.
    c. If success: record passed, continue.
    d. If failure:
@@ -197,11 +241,11 @@ Example: `artifacts/screenshots/run_abc123/step-2-failure.png`
       ii. Record error.
       iii. Mark remaining steps as skipped.
       iv. Break loop.
-6. Close browser.
-7. Record finishedAt and durationMs.
-8. Determine overall status.
-9. Write RunResult to results/.
-10. Return RunResult.
+7. Close browser.
+8. Record finishedAt and durationMs.
+9. Determine overall status.
+10. Write RunResult to results/.
+11. Return RunResult.
 ```
 
 ## 8. IPC Contract
@@ -254,7 +298,6 @@ The main process handler will:
 - Video recording.
 - Trace viewer.
 - Network log capture.
-- Console log capture.
 - Browser context reuse across tests.
 - Authentication state management.
 - Environment variables in steps.
