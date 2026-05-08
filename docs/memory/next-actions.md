@@ -4,7 +4,7 @@ Last updated: 2026-05-08
 
 ## Priority Order
 
-1. Continue runner/results evidence work by capturing request failures or similarly high-signal network evidence now that console and page-error diagnostics exist.
+1. Continue runner/results evidence work by capturing compact HTTP error responses (for example 4xx/5xx) now that request failures, console messages, and page-error diagnostics exist.
 2. Continue recorder/runner hardening after the evidence improvements above are complete.
 3. Apply the new `Local QA Workbench` direction incrementally to shared renderer surfaces without changing product behavior.
 4. Revisit broader project recovery or migration flows only after failure diagnostics and workflow clarity improve.
@@ -27,7 +27,7 @@ Last updated: 2026-05-08
 - Users can now manually forget recent project entries without deleting project files.
 - Failed run results now preview their saved screenshot through a validated main-process PNG reader instead of exposing raw filesystem access to the renderer.
 - Failed and error runs now show a copyable failure summary, and the summary now includes browser evidence counts without dumping raw logs.
-- Run results now capture capped browser console messages and page errors, and the Results panel now surfaces them in a compact Browser evidence section when present.
+- Run results now capture capped browser console messages, page errors, and request failures, and the Results panel now surfaces them in a compact Browser evidence section when present.
 - Step reordering is now implemented in the manual step editor with simple Move Up / Move Down controls. No drag-and-drop library was added.
 - Test rename, duplicate, and guarded delete are now implemented in the Tests workspace. Rename stays on the existing `saveTestCase` path, duplicates get a new `testId` and fresh step IDs, and delete uses inline confirmation before file removal.
 - `docs/ux/product-style-direction.md` defines the chosen product direction: a Linear-led `Local QA Workbench` blend with Cursor, Raycast, Sentry, and Stripe as secondary references.

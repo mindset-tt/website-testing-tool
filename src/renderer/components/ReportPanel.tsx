@@ -5,6 +5,7 @@ import type { ReactElement } from 'react';
 import { toTestCaseFileName } from '../../shared/project-schema';
 import type {
   BrowserConsoleMessage,
+  NetworkFailureRecord,
   PageErrorRecord,
   RunResult,
   StepSnapshot,
@@ -18,6 +19,7 @@ import {
   getPrimaryFailureStep,
   getBrowserEvidenceCounts,
   getConsoleMessagesForDisplay,
+  getNetworkFailuresForDisplay,
   getPageErrorStackPreview,
   getPageErrorsForDisplay,
   getStepDefinitionForResult,
@@ -86,6 +88,10 @@ function getConsoleEvidenceTone(message: BrowserConsoleMessage): 'danger' | 'war
   return 'neutral';
 }
 
+function getNetworkFailureMessage(networkFailure: NetworkFailureRecord): string {
+  return networkFailure.failureText ?? 'Request failed without an error text.';
+}
+
 export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const [results, setResults] = useState<readonly RunResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -114,6 +120,7 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const browserEvidenceVisible = selectedResult ? hasBrowserEvidence(selectedResult) : false;
   const displayedConsoleMessages = selectedResult ? getConsoleMessagesForDisplay(selectedResult) : [];
   const displayedPageErrors = selectedResult ? getPageErrorsForDisplay(selectedResult) : [];
+  const displayedNetworkFailures = selectedResult ? getNetworkFailuresForDisplay(selectedResult) : [];
 
   useEffect(() => {
     let cancelled = false;
@@ -513,7 +520,7 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
               <div className="report-browser-evidence-header">
                 <div>
                   <p className="eyebrow">Browser evidence</p>
-                  <h4>Console and page signals captured during the run</h4>
+                  <h4>Console, page, and network signals captured during the run</h4>
                 </div>
               </div>
 
@@ -535,6 +542,12 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
                     {browserEvidenceCounts.pageErrors}
                   </span>
                   <span className="report-browser-evidence-count-label">Page errors</span>
+                </div>
+                <div className="report-browser-evidence-count">
+                  <span className="report-browser-evidence-count-value">
+                    {browserEvidenceCounts.networkFailures}
+                  </span>
+                  <span className="report-browser-evidence-count-label">Network failures</span>
                 </div>
               </div>
 
@@ -624,6 +637,52 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
                         </article>
                       );
                     })}
+                  </div>
+                </section>
+              )}
+
+              {displayedNetworkFailures.length > 0 && (
+                <section className="report-browser-evidence-block" aria-label="Network failures">
+                  <div className="report-browser-evidence-block-header">
+                    <h5>Network failures</h5>
+                    <span className="report-browser-evidence-note">Latest failed requests</span>
+                  </div>
+                  <div className="report-browser-evidence-list">
+                    {displayedNetworkFailures.map((networkFailure: NetworkFailureRecord, index) => (
+                      <article
+                        key={`${networkFailure.timestamp}-${networkFailure.url}-${index}`}
+                        className="report-browser-evidence-entry report-browser-evidence-entry-warning"
+                      >
+                        <div className="report-browser-evidence-entry-header">
+                          <span className="report-browser-evidence-badge report-browser-evidence-badge-warning">
+                            request failed
+                          </span>
+                          <span className="report-browser-evidence-meta">
+                            {formatEvidenceTimestamp(networkFailure.timestamp)}
+                          </span>
+                          {typeof networkFailure.relatedStepIndex === 'number' && (
+                            <span className="report-browser-evidence-meta">
+                              Step {networkFailure.relatedStepIndex + 1}
+                            </span>
+                          )}
+                          {networkFailure.method && (
+                            <span className="report-browser-evidence-meta">{networkFailure.method}</span>
+                          )}
+                          {networkFailure.resourceType && (
+                            <span className="report-browser-evidence-meta">{networkFailure.resourceType}</span>
+                          )}
+                          {typeof networkFailure.status === 'number' && (
+                            <span className="report-browser-evidence-meta">HTTP {networkFailure.status}</span>
+                          )}
+                        </div>
+                        <p className="report-browser-evidence-text">
+                          {getNetworkFailureMessage(networkFailure)}
+                        </p>
+                        <p className="report-browser-evidence-location report-mono">
+                          {networkFailure.url}
+                        </p>
+                      </article>
+                    ))}
                   </div>
                 </section>
               )}

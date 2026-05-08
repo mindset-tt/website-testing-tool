@@ -22,7 +22,7 @@ The runner is responsible for:
 - Launching a Playwright browser and page.
 - Executing each step in order.
 - Capturing a screenshot on the first failure.
-- Capturing capped browser console messages and page errors during the run.
+- Capturing capped browser console messages, page errors, and request failures during the run.
 - Closing the browser after execution (success or failure).
 - Writing the `RunResult` to disk.
 
@@ -81,6 +81,7 @@ interface RunResult {
   readonly failureScreenshotPath?: string;  // relative to project root, only on failure
   readonly consoleMessages?: readonly BrowserConsoleMessage[]; // optional browser console evidence
   readonly pageErrors?: readonly PageErrorRecord[]; // optional unhandled page errors
+  readonly networkFailures?: readonly NetworkFailureRecord[]; // optional failed request evidence
   readonly stepSnapshots?: readonly StepSnapshot[]; // historical test step data captured at run time
 }
 ```
@@ -162,13 +163,28 @@ interface PageErrorRecord {
 }
 ```
 
+### `NetworkFailureRecord`
+
+```typescript
+interface NetworkFailureRecord {
+  readonly timestamp: string;      // ISO 8601
+  readonly url: string;            // truncated for safe UI display/storage
+  readonly method?: string;
+  readonly resourceType?: string;
+  readonly failureText?: string;
+  readonly status?: number;        // only when meaningfully available
+  readonly relatedStepIndex?: number; // optional 0-based step index when easy to associate
+}
+```
+
 MVP note:
 
 - `RunResult` now stores `stepSnapshots` when available.
-- `RunResult` can also store optional `consoleMessages` and `pageErrors`.
+- `RunResult` can also store optional `consoleMessages`, `pageErrors`, and `networkFailures`.
 - Snapshot data is captured at run time and preserved even if the saved test case changes later.
-- Console and page-error evidence are capped in memory before save to keep the result JSON compact.
-- Older run results remain valid when `consoleMessages`, `pageErrors`, or `stepSnapshots` are absent.
+- Console, page-error, and request-failure evidence are capped in memory before save to keep the result JSON compact.
+- Failed-request capture is intentionally narrow in MVP: only `page.on('requestfailed')` events are stored, not all successful traffic or full HAR data.
+- Older run results remain valid when `consoleMessages`, `pageErrors`, `networkFailures`, or `stepSnapshots` are absent.
 - The Results UI prefers snapshot data for target/value/timeout details and falls back to the current test case only for older run results without snapshots.
 
 ### `StepStatus`
@@ -215,8 +231,8 @@ Example: `artifacts/screenshots/run_abc123/step-2-failure.png`
 - The screenshot directory is created on demand.
 - Renderer screenshot previews must be loaded through a validated main-process bridge. The renderer must not read arbitrary project files directly.
 - MVP screenshot previews are limited to `.png` files that resolve inside `{projectPath}/artifacts/screenshots/`.
-- Browser console messages and page errors are stored directly inside the `RunResult` JSON and are not written to separate files in MVP.
-- Evidence storage is capped to keep runs compact: currently 100 console messages and 50 page errors.
+- Browser console messages, page errors, and network failures are stored directly inside the `RunResult` JSON and are not written to separate files in MVP.
+- Evidence storage is capped to keep runs compact: currently 100 console messages, 50 page errors, and 50 network failures.
 
 ## 7. Runner Lifecycle
 
@@ -225,11 +241,11 @@ Example: `artifacts/screenshots/run_abc123/step-2-failure.png`
 2. Create run ID and result directory.
 3. Launch browser (Playwright).
 4. Create new page.
-5. Attach best-effort `page.on('console')` and `page.on('pageerror')` listeners.
+5. Attach best-effort `page.on('console')`, `page.on('pageerror')`, and `page.on('requestfailed')` listeners.
 6. For each step:
    a. Record startedAt.
    b. Track the current step index for optional evidence association.
-   b. Execute step action.
+   c. Execute step action.
    c. If success: record passed, continue.
    d. If failure:
       i. Capture screenshot.
@@ -297,7 +313,7 @@ The main process handler will:
 - Parallel or concurrent runs.
 - Video recording.
 - Trace viewer.
-- Network log capture.
+- Full HAR capture or full successful-request logging.
 - Browser context reuse across tests.
 - Authentication state management.
 - Environment variables in steps.

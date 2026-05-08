@@ -1,19 +1,26 @@
 import type {
   BrowserConsoleLocation,
   BrowserConsoleMessage,
+  NetworkFailureRecord,
   PageErrorRecord
 } from '../shared/project-schema';
 
 export const MAX_CONSOLE_MESSAGE_COUNT = 100;
 export const MAX_PAGE_ERROR_COUNT = 50;
+export const MAX_NETWORK_FAILURE_COUNT = 50;
 export const MAX_CONSOLE_TEXT_LENGTH = 400;
 export const MAX_CONSOLE_TYPE_LENGTH = 32;
 export const MAX_LOCATION_URL_LENGTH = 240;
 export const MAX_PAGE_ERROR_MESSAGE_LENGTH = 400;
 export const MAX_PAGE_ERROR_NAME_LENGTH = 80;
 export const MAX_PAGE_ERROR_STACK_LENGTH = 1200;
+export const MAX_NETWORK_URL_LENGTH = 320;
+export const MAX_NETWORK_METHOD_LENGTH = 16;
+export const MAX_NETWORK_RESOURCE_TYPE_LENGTH = 32;
+export const MAX_NETWORK_FAILURE_TEXT_LENGTH = 240;
 
 const ELLIPSIS = '...';
+const IGNORED_NETWORK_FAILURE_URL_PREFIXES = ['about:', 'blob:', 'data:', 'devtools:'] as const;
 
 interface ConsoleMessageInput {
   readonly timestamp?: string;
@@ -31,16 +38,29 @@ interface PageErrorInput {
   readonly relatedStepIndex?: number;
 }
 
+interface NetworkFailureInput {
+  readonly timestamp?: string;
+  readonly url?: string;
+  readonly method?: string;
+  readonly resourceType?: string;
+  readonly failureText?: string;
+  readonly status?: number;
+  readonly relatedStepIndex?: number;
+}
+
 export interface RunEvidenceCollector {
   recordConsoleMessage(input: ConsoleMessageInput): void;
   recordPageError(input: PageErrorInput): void;
+  recordNetworkFailure(input: NetworkFailureInput): void;
   getConsoleMessages(): readonly BrowserConsoleMessage[] | undefined;
   getPageErrors(): readonly PageErrorRecord[] | undefined;
+  getNetworkFailures(): readonly NetworkFailureRecord[] | undefined;
 }
 
 export function createRunEvidenceCollector(): RunEvidenceCollector {
   const consoleMessages: BrowserConsoleMessage[] = [];
   const pageErrors: PageErrorRecord[] = [];
+  const networkFailures: NetworkFailureRecord[] = [];
 
   return {
     recordConsoleMessage(input) {
@@ -65,11 +85,34 @@ export function createRunEvidenceCollector(): RunEvidenceCollector {
 
       pushCapped(pageErrors, entry, MAX_PAGE_ERROR_COUNT);
     },
+    recordNetworkFailure(input) {
+      if (shouldIgnoreNetworkFailureUrl(input.url)) {
+        return;
+      }
+
+      const entry: NetworkFailureRecord = {
+        timestamp: normalizeTimestamp(input.timestamp),
+        url: normalizeSingleLineText(input.url, '(unknown request URL)', MAX_NETWORK_URL_LENGTH),
+        method: normalizeOptionalSingleLineText(input.method, MAX_NETWORK_METHOD_LENGTH)?.toUpperCase(),
+        resourceType: normalizeOptionalSingleLineText(
+          input.resourceType,
+          MAX_NETWORK_RESOURCE_TYPE_LENGTH
+        )?.toLowerCase(),
+        failureText: normalizeOptionalSingleLineText(input.failureText, MAX_NETWORK_FAILURE_TEXT_LENGTH),
+        status: normalizeHttpStatus(input.status),
+        relatedStepIndex: normalizeRelatedStepIndex(input.relatedStepIndex)
+      };
+
+      pushCapped(networkFailures, entry, MAX_NETWORK_FAILURE_COUNT);
+    },
     getConsoleMessages() {
       return consoleMessages.length > 0 ? [...consoleMessages] : undefined;
     },
     getPageErrors() {
       return pageErrors.length > 0 ? [...pageErrors] : undefined;
+    },
+    getNetworkFailures() {
+      return networkFailures.length > 0 ? [...networkFailures] : undefined;
     }
   };
 }
@@ -156,6 +199,24 @@ function normalizeRelatedStepIndex(value: number | undefined): number | undefine
   }
 
   return value;
+}
+
+function normalizeHttpStatus(value: number | undefined): number | undefined {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 100 || value > 599) {
+    return undefined;
+  }
+
+  return value;
+}
+
+function shouldIgnoreNetworkFailureUrl(value: string | undefined): boolean {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  return IGNORED_NETWORK_FAILURE_URL_PREFIXES.some((prefix) => normalized.startsWith(prefix));
 }
 
 function pushCapped<T>(items: T[], item: T, maxEntries: number): void {

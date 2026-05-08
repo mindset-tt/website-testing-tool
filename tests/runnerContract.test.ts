@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   RUN_RESULT_SCHEMA_VERSION,
   validateBrowserConsoleMessage,
+  validateNetworkFailureRecord,
   validatePageErrorRecord,
   validateRunResult,
   validateStepResult,
@@ -10,6 +11,7 @@ import {
 } from '../src/shared/project-schema';
 import type {
   BrowserConsoleMessage,
+  NetworkFailureRecord,
   PageErrorRecord,
   RunResult,
   StepResult,
@@ -177,6 +179,34 @@ describe('validatePageErrorRecord', () => {
   });
 });
 
+describe('validateNetworkFailureRecord', () => {
+  it('accepts a network failure record with optional fields', () => {
+    const networkFailure: NetworkFailureRecord = {
+      timestamp: '2026-05-07T10:00:05.000Z',
+      url: 'https://example.com/api/checkout',
+      method: 'POST',
+      resourceType: 'xhr',
+      failureText: 'net::ERR_TIMED_OUT',
+      status: 503,
+      relatedStepIndex: 1
+    };
+
+    expect(validateNetworkFailureRecord(networkFailure)).toEqual([]);
+  });
+
+  it('rejects a network failure record with invalid status', () => {
+    const networkFailure = {
+      timestamp: '2026-05-07T10:00:05.000Z',
+      url: 'https://example.com/api/checkout',
+      status: 99
+    };
+
+    const errors = validateNetworkFailureRecord(networkFailure);
+
+    expect(errors.some((e) => e.includes('status'))).toBe(true);
+  });
+});
+
 describe('validateRunResult', () => {
   it('accepts a valid passed run result', () => {
     const runResult: RunResult = {
@@ -270,6 +300,16 @@ describe('validateRunResult', () => {
           stack: 'TypeError: Unhandled TypeError\n    at app.js:10:2',
           relatedStepIndex: 0
         }
+      ],
+      networkFailures: [
+        {
+          timestamp: '2026-05-07T10:00:05.000Z',
+          url: 'https://example.com/api/checkout',
+          method: 'POST',
+          resourceType: 'xhr',
+          failureText: 'net::ERR_TIMED_OUT',
+          relatedStepIndex: 0
+        }
       ]
     };
 
@@ -357,6 +397,12 @@ describe('validateRunResult', () => {
           timestamp: '',
           message: ''
         }
+      ],
+      networkFailures: [
+        {
+          timestamp: '',
+          url: ''
+        }
       ]
     };
 
@@ -364,6 +410,7 @@ describe('validateRunResult', () => {
 
     expect(errors.some((e) => e.includes('Console message 1'))).toBe(true);
     expect(errors.some((e) => e.includes('Page error 1'))).toBe(true);
+    expect(errors.some((e) => e.includes('Network failure 1'))).toBe(true);
   });
 });
 

@@ -115,6 +115,16 @@ export interface PageErrorRecord {
   readonly relatedStepIndex?: number;
 }
 
+export interface NetworkFailureRecord {
+  readonly timestamp: string;
+  readonly url: string;
+  readonly method?: string;
+  readonly resourceType?: string;
+  readonly failureText?: string;
+  readonly status?: number;
+  readonly relatedStepIndex?: number;
+}
+
 export interface RunResult {
   readonly schemaVersion: typeof RUN_RESULT_SCHEMA_VERSION;
   readonly runId: string;
@@ -137,6 +147,11 @@ export interface RunResult {
    * Absent for older result files or runs that recorded no page errors.
    */
   readonly pageErrors?: readonly PageErrorRecord[];
+  /**
+   * High-signal failed network requests captured during the run.
+   * Absent for older result files or runs that recorded no request failures.
+   */
+  readonly networkFailures?: readonly NetworkFailureRecord[];
   /**
    * Historical step snapshots captured at run time.
    * Present for results saved by runner versions that support snapshots.
@@ -349,6 +364,18 @@ export function validateRunResult(value: unknown): string[] {
     }
   }
 
+  if (value.networkFailures !== undefined) {
+    if (!Array.isArray(value.networkFailures)) {
+      errors.push('Run result networkFailures must be an array when present.');
+    } else {
+      for (const [index, networkFailure] of value.networkFailures.entries()) {
+        for (const error of validateNetworkFailureRecord(networkFailure)) {
+          errors.push(`Network failure ${index + 1}: ${error}`);
+        }
+      }
+    }
+  }
+
   if (value.stepSnapshots !== undefined) {
     if (!Array.isArray(value.stepSnapshots)) {
       errors.push('Run result stepSnapshots must be an array when present.');
@@ -409,6 +436,47 @@ export function validateStepResult(value: unknown): string[] {
 
   if (value.screenshotPath !== undefined && typeof value.screenshotPath !== 'string') {
     errors.push('Step result screenshotPath must be a string when present.');
+  }
+
+  return errors;
+}
+
+export function validateNetworkFailureRecord(value: unknown): string[] {
+  if (!isRecord(value)) {
+    return ['Network failure record must be an object.'];
+  }
+
+  const errors: string[] = [];
+
+  for (const key of ['timestamp', 'url'] as const) {
+    if (!isNonEmptyString(value[key])) {
+      errors.push(`${key} must be a non-empty string.`);
+    }
+  }
+
+  for (const key of ['method', 'resourceType', 'failureText'] as const) {
+    if (value[key] !== undefined && typeof value[key] !== 'string') {
+      errors.push(`${key} must be a string when present.`);
+    }
+  }
+
+  if (
+    value.status !== undefined &&
+    (typeof value.status !== 'number' ||
+      !Number.isInteger(value.status) ||
+      value.status < 100 ||
+      value.status > 599)
+  ) {
+    errors.push('status must be an integer between 100 and 599 when present.');
+  }
+
+  if (
+    value.relatedStepIndex !== undefined &&
+    (typeof value.relatedStepIndex !== 'number' ||
+      !Number.isInteger(value.relatedStepIndex) ||
+      value.relatedStepIndex < 0)
+  ) {
+    errors.push('relatedStepIndex must be a non-negative integer when present.');
   }
 
   return errors;

@@ -1631,7 +1631,7 @@ select:focus-visible,
 .report-browser-evidence-counts {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .report-browser-evidence-count,
@@ -1695,6 +1695,10 @@ select:focus-visible,
 
 .report-browser-evidence-entry-danger {
   border-color: rgba(236, 90, 107, 0.18);
+}
+
+.report-browser-evidence-entry-warning {
+  border-color: rgba(213, 155, 60, 0.18);
 }
 
 .report-browser-evidence-badge {

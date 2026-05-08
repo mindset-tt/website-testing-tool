@@ -110,6 +110,7 @@ The JSON contains:
 - `failureScreenshotPath` (relative path, only on failure)
 - optional `consoleMessages` array with timestamp, type, text, safe location details, and optional related step index
 - optional `pageErrors` array with timestamp, message, optional name/stack, and optional related step index
+- optional `networkFailures` array with timestamp, URL, optional method/resource type/failure text/status, and optional related step index
 - `stepSnapshots` array with targeted historical step details captured at run time
 
 ## Inspecting Failure Screenshot Path
@@ -137,13 +138,14 @@ The path is shown in the run result UI and stored in the result JSON.
 
 ## Inspecting Browser Evidence
 
-1. Run or open a result that produced browser console messages or unhandled page errors.
+1. Run or open a result that produced browser console messages, unhandled page errors, or failed requests.
 2. Select the run in the **Results** section.
 3. Confirm a compact **Browser evidence** section appears only when evidence exists.
-4. Confirm the section shows counts for console messages, warnings/errors, and page errors.
+4. Confirm the section shows counts for console messages, warnings/errors, page errors, and network failures.
 5. Confirm the console list prefers recent warnings/errors when present and stays compact.
 6. Confirm page errors show readable message text and compact stack/name context without dumping huge raw logs.
-7. Confirm runs with no console or page evidence do not show an empty browser evidence panel.
+7. Confirm network failures show a compact failed-request list with safe URL display plus method/resource type/failure text when available.
+8. Confirm runs with no browser evidence do not show an empty browser evidence panel.
 
 ## Copying A Failure Summary
 
@@ -153,6 +155,7 @@ The path is shown in the run result UI and stored in the result JSON.
 4. Paste the clipboard contents into a text editor.
 5. Confirm the summary includes the test name or ID, run status, browser, duration, failed step details, browser evidence counts when present, error message, and screenshot path when present.
 6. Confirm the clipboard summary does not dump full console logs or full page-error stacks.
+7. Confirm the clipboard summary includes the network failure count when request failures were captured, but not the raw failed-request list.
 
 ## Starting Recording
 
@@ -186,8 +189,8 @@ The path is shown in the run result UI and stored in the result JSON.
 | Run passing test | Green PASSED badge, result JSON in `results/` |
 | Run failing test | Red FAILED badge, screenshot in `artifacts/screenshots/` |
 | View failed result in Results | Screenshot path stays visible and a preview loads when the PNG still exists |
-| Inspect failed result details | Failure summary card shows step number, label, type, error, saved step context when available, and compact browser evidence when it exists |
-| Copy failure summary | Clipboard gets a compact plain-text failure summary with browser evidence counts but no JSON dump, full logs, or absolute artifact path |
+| Inspect failed result details | Failure summary card shows step number, label, type, error, saved step context when available, and compact browser evidence when it exists, including failed requests |
+| Copy failure summary | Clipboard gets a compact plain-text failure summary with browser evidence counts but no JSON dump, full logs, raw request list, or absolute artifact path |
 | Run test with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
 | Start recording | Chromium window opens, status shows "Recording" |
 | Start recording with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
@@ -203,5 +206,6 @@ The path is shown in the run result UI and stored in the result JSON.
 - **Fedora fallback:** Playwright uses Ubuntu 24.04 fallback build on Fedora.
 - **File names not human-readable:** Test case file names are derived from test IDs (UUID-based).
 - **No project delete or folder rename:** Projects can be renamed in metadata only, but not deleted or renamed on disk through the UI.
-- **Failure evidence is still MVP-limited:** The Results panel now shows failure screenshots, browser console messages, and page errors, but traces, request-failure logs, videos, and network captures are still out of scope.
+- **Failure evidence is still MVP-limited:** The Results panel now shows failure screenshots, browser console messages, page errors, and request failures, but traces, videos, full HAR capture, and broader network captures are still out of scope.
+- **Request failures only cover one class of network problems:** HTTP 4xx/5xx responses that still complete normally do not emit `requestfailed`, so they may still be absent from MVP diagnostics.
 - **Older historical results may be thinner:** Older run result files created before step snapshots or browser evidence existed will still load, but they may lack historical step detail or browser evidence sections.

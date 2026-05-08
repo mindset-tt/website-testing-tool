@@ -1,6 +1,7 @@
 import type {
   BrowserConsoleLocation,
   BrowserConsoleMessage,
+  NetworkFailureRecord,
   PageErrorRecord,
   RunResult,
   StepResult,
@@ -17,6 +18,7 @@ export interface BrowserEvidenceCounts {
   readonly consoleMessages: number;
   readonly consoleWarningsOrErrors: number;
   readonly pageErrors: number;
+  readonly networkFailures: number;
 }
 
 const RELEVANT_CONSOLE_TYPES = new Set(['warning', 'error', 'assert']);
@@ -28,17 +30,23 @@ export function getPrimaryFailureStep(runResult: RunResult): StepResult | null {
 }
 
 export function hasBrowserEvidence(runResult: RunResult): boolean {
-  return (runResult.consoleMessages?.length ?? 0) > 0 || (runResult.pageErrors?.length ?? 0) > 0;
+  return (
+    (runResult.consoleMessages?.length ?? 0) > 0 ||
+    (runResult.pageErrors?.length ?? 0) > 0 ||
+    (runResult.networkFailures?.length ?? 0) > 0
+  );
 }
 
 export function getBrowserEvidenceCounts(runResult: RunResult): BrowserEvidenceCounts {
   const consoleMessages = runResult.consoleMessages ?? [];
   const pageErrors = runResult.pageErrors ?? [];
+  const networkFailures = runResult.networkFailures ?? [];
 
   return {
     consoleMessages: consoleMessages.length,
     consoleWarningsOrErrors: consoleMessages.filter(isConsoleWarningOrError).length,
-    pageErrors: pageErrors.length
+    pageErrors: pageErrors.length,
+    networkFailures: networkFailures.length
   };
 }
 
@@ -70,6 +78,16 @@ export function getPageErrorsForDisplay(runResult: RunResult, limit = 3): readon
   }
 
   return pageErrors.slice(-limit).reverse();
+}
+
+export function getNetworkFailuresForDisplay(runResult: RunResult, limit = 3): readonly NetworkFailureRecord[] {
+  const networkFailures = runResult.networkFailures ?? [];
+
+  if (networkFailures.length === 0 || limit <= 0) {
+    return [];
+  }
+
+  return networkFailures.slice(-limit).reverse();
 }
 
 export function formatBrowserEvidenceLocation(location: BrowserConsoleLocation | null | undefined): string | null {
@@ -224,6 +242,10 @@ export function buildFailureSummary(
 
   if (browserEvidenceCounts.pageErrors > 0) {
     lines.push(`Page errors: ${browserEvidenceCounts.pageErrors}`);
+  }
+
+  if (browserEvidenceCounts.networkFailures > 0) {
+    lines.push(`Network failures: ${browserEvidenceCounts.networkFailures}`);
   }
 
   lines.push(`Error: ${errorMessage}`);

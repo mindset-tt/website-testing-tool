@@ -7,6 +7,7 @@ import {
   getBrowserEvidenceCounts,
   getConsoleMessagesForDisplay,
   getFailureScreenshotPath,
+  getNetworkFailuresForDisplay,
   getPageErrorStackPreview,
   getPageErrorsForDisplay,
   getPrimaryFailureStep,
@@ -102,6 +103,23 @@ const sampleRunResultWithBrowserEvidence: RunResult = {
       stack: 'TypeError: Cannot read properties of undefined.\n    at app.js:24:2\n    at app.js:28:5',
       relatedStepIndex: 1
     }
+  ],
+  networkFailures: [
+    {
+      timestamp: '2026-05-07T10:00:04.500Z',
+      url: 'https://example.com/api/checkout',
+      method: 'POST',
+      resourceType: 'xhr',
+      failureText: 'net::ERR_TIMED_OUT',
+      relatedStepIndex: 1
+    },
+    {
+      timestamp: '2026-05-07T10:00:04.800Z',
+      url: 'https://cdn.example.com/checkout-widget.js',
+      method: 'GET',
+      resourceType: 'script',
+      failureText: 'net::ERR_CONNECTION_REFUSED'
+    }
   ]
 };
 
@@ -137,9 +155,11 @@ describe('result diagnostics helpers', () => {
     expect(summary).toContain('Timeout: 5000ms');
     expect(summary).toContain('Console messages: 3 total (2 warnings/errors)');
     expect(summary).toContain('Page errors: 1');
+    expect(summary).toContain('Network failures: 2');
     expect(summary).toContain('Error: Expected text "Confirmed" not found');
     expect(summary).toContain('Screenshot: artifacts/screenshots/run_123/step-1-failure.png');
     expect(summary).not.toContain('Checkout widget crashed.');
+    expect(summary).not.toContain('https://example.com/api/checkout');
   });
 
   it('builds a safe error summary when no failed step details were recorded', () => {
@@ -166,7 +186,8 @@ describe('browser evidence diagnostics', () => {
     expect(counts).toEqual({
       consoleMessages: 3,
       consoleWarningsOrErrors: 2,
-      pageErrors: 1
+      pageErrors: 1,
+      networkFailures: 2
     });
     expect(consoleMessages.map((message) => message.type)).toEqual(['error', 'warning']);
   });
@@ -188,6 +209,14 @@ describe('browser evidence diagnostics', () => {
     expect(stackPreview).toBe(
       'TypeError: Cannot read properties of undefined. |     at app.js:24:2'
     );
+  });
+
+  it('returns the latest network failures for compact display', () => {
+    const networkFailures = getNetworkFailuresForDisplay(sampleRunResultWithBrowserEvidence, 1);
+
+    expect(networkFailures).toHaveLength(1);
+    expect(networkFailures[0]?.url).toBe('https://cdn.example.com/checkout-widget.js');
+    expect(networkFailures[0]?.failureText).toBe('net::ERR_CONNECTION_REFUSED');
   });
 });
 

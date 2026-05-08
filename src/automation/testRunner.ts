@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
 import { chromium } from 'playwright';
-import type { Browser, Page } from 'playwright';
+import type { Browser, Page, Request } from 'playwright';
 
 import type { TestCase, TestStep, RunResult, StepResult, StepStatus } from '../shared/project-schema';
 import { RUN_RESULT_SCHEMA_VERSION, validateRunResult, createStepSnapshot } from '../shared/project-schema';
@@ -86,6 +86,7 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
       failureScreenshotPath,
       consoleMessages: evidenceCollector.getConsoleMessages(),
       pageErrors: evidenceCollector.getPageErrors(),
+      networkFailures: evidenceCollector.getNetworkFailures(),
       stepSnapshots: testCase.steps.map(createStepSnapshot)
     };
 
@@ -118,6 +119,7 @@ export async function runTestCase(options: RunnerOptions): Promise<RunResult> {
       stepResults: [],
       consoleMessages: evidenceCollector.getConsoleMessages(),
       pageErrors: evidenceCollector.getPageErrors(),
+      networkFailures: evidenceCollector.getNetworkFailures(),
       stepSnapshots: testCase.steps.map(createStepSnapshot)
     };
 
@@ -169,6 +171,33 @@ function attachRunDiagnostics(
       // Page error capture is best-effort and must not fail the run.
     }
   });
+
+  page.on('requestfailed', (request) => {
+    void captureNetworkFailure(request, evidenceCollector, getCurrentStepIndex);
+  });
+}
+
+async function captureNetworkFailure(
+  request: Request,
+  evidenceCollector: ReturnType<typeof createRunEvidenceCollector>,
+  getCurrentStepIndex: () => number | undefined
+): Promise<void> {
+  try {
+    const response = await request.response().catch(() => null);
+    const failure = request.failure();
+
+    evidenceCollector.recordNetworkFailure({
+      timestamp: new Date().toISOString(),
+      url: request.url(),
+      method: request.method(),
+      resourceType: request.resourceType(),
+      failureText: failure?.errorText,
+      status: response?.status(),
+      relatedStepIndex: getCurrentStepIndex()
+    });
+  } catch {
+    // Network failure capture is best-effort and must not fail the run.
+  }
 }
 
 async function executeStep(
