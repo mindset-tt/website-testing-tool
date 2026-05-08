@@ -183,6 +183,16 @@ export type FailureScreenshotReadActionResult =
       readonly error: string;
     };
 
+export type ResultExportActionResult =
+  | {
+      readonly ok: true;
+      readonly reportPath: string;
+    }
+  | {
+      readonly ok: false;
+      readonly error: string;
+    };
+
 export interface ResultApi {
   readonly listResults: (projectPath: string) => Promise<ResultListActionResult>;
   readonly readResult: (projectPath: string, runId: string) => Promise<ResultReadActionResult>;
@@ -190,6 +200,7 @@ export interface ResultApi {
     projectPath: string,
     screenshotPath: string
   ) => Promise<FailureScreenshotReadActionResult>;
+  readonly exportRunHtmlReport: (projectPath: string, runId: string) => Promise<ResultExportActionResult>;
 }
 
 export interface WebsiteTestingToolApi {

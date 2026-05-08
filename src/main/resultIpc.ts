@@ -2,11 +2,12 @@ import { ipcMain } from 'electron';
 
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import type {
+  ResultExportActionResult,
   FailureScreenshotReadActionResult,
   ResultListActionResult,
   ResultReadActionResult
 } from '../shared/preload-api';
-import { listRunResults, readFailureScreenshot, readRunResult } from '../storage/resultStorage';
+import { exportRunHtmlReport, listRunResults, readFailureScreenshot, readRunResult } from '../storage/resultStorage';
 
 export function registerResultIpc(): void {
   ipcMain.handle(
@@ -66,6 +67,30 @@ export function registerResultIpc(): void {
         const dataUrl = await readFailureScreenshot(projectPath.trim(), screenshotPath.trim());
 
         return { ok: true, dataUrl };
+      } catch (error) {
+        return { ok: false, error: getErrorMessage(error) };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.resultExportHtmlReport,
+    async (_event, projectPath: unknown, runId: unknown): Promise<ResultExportActionResult> => {
+      if (typeof projectPath !== 'string' || projectPath.trim().length === 0) {
+        return { ok: false, error: 'Project path is required.' };
+      }
+
+      if (typeof runId !== 'string' || runId.trim().length === 0) {
+        return { ok: false, error: 'Run ID is required.' };
+      }
+
+      try {
+        const exported = await exportRunHtmlReport(projectPath.trim(), runId.trim());
+
+        return {
+          ok: true,
+          reportPath: exported.reportPath
+        };
       } catch (error) {
         return { ok: false, error: getErrorMessage(error) };
       }

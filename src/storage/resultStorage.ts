@@ -1,12 +1,17 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { extname, isAbsolute, join, normalize, relative, resolve } from 'node:path';
 
 import type { RunResult } from '../shared/project-schema';
 import { PROJECT_DIRECTORY_NAMES, validateRunResult } from '../shared/project-schema';
+import { renderRunHtmlReport } from '../shared/htmlReport';
 
 const RUN_RESULT_FILE_PREFIX = 'run-';
 const RUN_RESULT_FILE_SUFFIX = '.json';
 const FAILURE_SCREENSHOT_EXTENSION = '.png';
+const REPORTS_DIRECTORY_NAME = 'reports';
+const HTML_REPORT_FILE_PREFIX = 'report-';
+const HTML_REPORT_FILE_SUFFIX = '.html';
+const RUN_ID_PATTERN = /^run_[a-z0-9_-]+$/i;
 
 export async function listRunResults(projectPath: string): Promise<readonly RunResult[]> {
   assertProjectPath(projectPath);
@@ -49,18 +54,56 @@ export async function listRunResults(projectPath: string): Promise<readonly RunR
 }
 
 export async function readRunResult(projectPath: string, runId: string): Promise<RunResult> {
-  assertProjectPath(projectPath);
+  const filePath = resolveRunResultPath(projectPath, runId);
 
-  const filePath = join(projectPath, 'results', `run-${runId}.json`);
-  const contents = await readFile(filePath, 'utf8');
-  const parsed = JSON.parse(contents) as unknown;
-  const errors = validateRunResult(parsed);
+  try {
+    const contents = await readFile(filePath, 'utf8');
+    const parsed = JSON.parse(contents) as unknown;
+    const errors = validateRunResult(parsed);
 
-  if (errors.length > 0) {
-    throw new Error(`Invalid run result: ${errors.join(' ')}`);
+    if (errors.length > 0) {
+      throw new Error('Saved run result is invalid.');
+    }
+
+    return parsed as RunResult;
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Saved run result is invalid.') {
+      throw error;
+    }
+
+    if (isNodeError(error) && error.code === 'ENOENT') {
+      throw new Error('Saved run result was not found.', { cause: error });
+    }
+
+    if (error instanceof SyntaxError) {
+      throw new Error('Saved run result could not be parsed.', { cause: error });
+    }
+
+    throw new Error('Saved run result could not be read.', { cause: error });
+  }
+}
+
+export async function exportRunHtmlReport(
+  projectPath: string,
+  runId: string
+): Promise<{ readonly reportPath: string }> {
+  const normalizedProjectPath = normalizeProjectPath(projectPath);
+  const normalizedRunId = normalizeRunId(runId);
+  const runResult = await readRunResult(normalizedProjectPath, normalizedRunId);
+  const reportPath = resolveRunHtmlReportPath(normalizedProjectPath, normalizedRunId);
+  const reportDirectoryPath = resolve(normalizedProjectPath, REPORTS_DIRECTORY_NAME);
+  const reportHtml = renderRunHtmlReport(runResult);
+
+  try {
+    await mkdir(reportDirectoryPath, { recursive: true });
+    await writeFile(reportPath, reportHtml, 'utf8');
+  } catch (error) {
+    throw new Error('HTML report could not be written.', { cause: error });
   }
 
-  return parsed as RunResult;
+  return {
+    reportPath: getRunHtmlReportRelativePath(normalizedRunId)
+  };
 }
 
 export async function readFailureScreenshot(projectPath: string, screenshotPath: string): Promise<string> {
@@ -116,10 +159,77 @@ export function resolveFailureScreenshotPath(projectPath: string, screenshotPath
   return resolvedScreenshotPath;
 }
 
+export function resolveRunHtmlReportPath(projectPath: string, runId: string): string {
+  const normalizedProjectPath = normalizeProjectPath(projectPath);
+  const normalizedRunId = normalizeRunId(runId);
+  const reportsDirectory = resolve(normalizedProjectPath, REPORTS_DIRECTORY_NAME);
+  const resolvedReportPath = resolve(normalizedProjectPath, getRunHtmlReportRelativePath(normalizedRunId));
+  const relativeToReports = relative(reportsDirectory, resolvedReportPath);
+
+  if (
+    relativeToReports.length === 0 ||
+    relativeToReports.startsWith('..') ||
+    isAbsolute(relativeToReports)
+  ) {
+    throw new Error('HTML report path must stay inside the project reports folder.');
+  }
+
+  return resolvedReportPath;
+}
+
 function assertProjectPath(projectPath: string): void {
   if (typeof projectPath !== 'string' || projectPath.trim().length === 0) {
     throw new Error('Project path is required.');
   }
+}
+
+function resolveRunResultPath(projectPath: string, runId: string): string {
+  const normalizedProjectPath = normalizeProjectPath(projectPath);
+  const normalizedRunId = normalizeRunId(runId);
+  const resultsDirectory = resolve(normalizedProjectPath, PROJECT_DIRECTORY_NAMES.results);
+  const resolvedRunResultPath = resolve(
+    resultsDirectory,
+    `${RUN_RESULT_FILE_PREFIX}${normalizedRunId}${RUN_RESULT_FILE_SUFFIX}`
+  );
+  const relativeToResults = relative(resultsDirectory, resolvedRunResultPath);
+
+  if (
+    relativeToResults.length === 0 ||
+    relativeToResults.startsWith('..') ||
+    isAbsolute(relativeToResults)
+  ) {
+    throw new Error('Run ID is invalid.');
+  }
+
+  return resolvedRunResultPath;
+}
+
+function normalizeProjectPath(projectPath: string): string {
+  assertProjectPath(projectPath);
+
+  return normalize(projectPath);
+}
+
+function normalizeRunId(runId: string): string {
+  if (typeof runId !== 'string') {
+    throw new Error('Run ID is required.');
+  }
+
+  const trimmedRunId = runId.trim();
+
+  if (trimmedRunId.length === 0) {
+    throw new Error('Run ID is required.');
+  }
+
+  if (!RUN_ID_PATTERN.test(trimmedRunId)) {
+    throw new Error('Run ID is invalid.');
+  }
+
+  return trimmedRunId;
+}
+
+function getRunHtmlReportRelativePath(runId: string): string {
+  return join(REPORTS_DIRECTORY_NAME, `${HTML_REPORT_FILE_PREFIX}${runId}${HTML_REPORT_FILE_SUFFIX}`);
 }
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {

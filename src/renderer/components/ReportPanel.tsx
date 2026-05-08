@@ -1,4 +1,4 @@
-import { Copy } from 'lucide-react';
+import { Copy, FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 
@@ -111,6 +111,9 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
+  const [exportingReport, setExportingReport] = useState(false);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const failureStepResult = selectedResult ? getPrimaryFailureStep(selectedResult) : null;
   const failureStepSnapshot = selectedResult ? getStepSnapshotForResult(failureStepResult, selectedResult) : null;
@@ -272,6 +275,9 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
     setPreviewSrc(null);
     setCopyMessage(null);
     setCopyError(null);
+    setExportingReport(false);
+    setExportMessage(null);
+    setExportError(null);
   };
 
   const handleCopyFailureSummary = async (): Promise<void> => {
@@ -292,6 +298,30 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
       setCopyMessage('Failure summary copied.');
     } catch {
       setCopyError('Could not copy the failure summary. Try copying the visible details manually.');
+    }
+  };
+
+  const handleExportHtmlReport = async (): Promise<void> => {
+    if (!selectedResult) {
+      return;
+    }
+
+    setExportingReport(true);
+    setExportMessage(null);
+    setExportError(null);
+
+    try {
+      const result = await window.websiteTestingTool.result.exportRunHtmlReport(projectPath, selectedResult.runId);
+
+      if (result.ok) {
+        setExportMessage(`HTML report exported to ${result.reportPath}.`);
+      } else {
+        setExportError(result.error);
+      }
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'HTML report export failed.');
+    } finally {
+      setExportingReport(false);
     }
   };
 
@@ -340,7 +370,28 @@ export function ReportPanel({ projectPath }: ReportPanelProps): ReactElement {
 
       {selectedResult && (
         <div className="report-detail" aria-label="Run result detail">
-          <h3>{selectedResult.testName}</h3>
+          <div className="report-detail-header">
+            <h3>{selectedResult.testName}</h3>
+            <div className="report-detail-actions">
+              <button
+                type="button"
+                className="button button-secondary compact-button"
+                disabled={exportingReport}
+                onClick={() => {
+                  void handleExportHtmlReport();
+                }}
+              >
+                <FileText size={15} />
+                {exportingReport ? 'Exporting…' : 'Export HTML report'}
+              </button>
+            </div>
+          </div>
+
+          {(exportMessage || exportError) && (
+            <p className={exportError ? 'notice notice-error report-export-notice' : 'notice report-export-notice'}>
+              {exportError ?? exportMessage}
+            </p>
+          )}
 
           <dl className="report-metadata">
             <div>

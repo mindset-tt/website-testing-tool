@@ -160,6 +160,16 @@ The path is shown in the run result UI and stored in the result JSON.
 7. Confirm the clipboard summary includes the network failure count when request failures were captured, but not the raw failed-request list.
 8. Confirm the clipboard summary includes the HTTP error count when completed 4xx/5xx responses were captured, but not the raw HTTP error list.
 
+## Exporting An HTML Report
+
+1. Open any saved run in the **Results** section.
+2. Click **Export HTML report**.
+3. Confirm the app shows a success message with a project-relative `reports/...html` path.
+4. Confirm the project now contains `reports/report-<runId>.html`.
+5. Open the exported file in a browser.
+6. Confirm the report shows run metadata, failure details when applicable, a step results table, browser evidence counts, compact evidence sections, and a local/offline note.
+7. Confirm screenshot information is shown as a relative path, not as an arbitrary filesystem picker result.
+
 ## Starting Recording
 
 1. With a project open, locate the **Recorder** panel.
@@ -194,6 +204,7 @@ The path is shown in the run result UI and stored in the result JSON.
 | View failed result in Results | Screenshot path stays visible and a preview loads when the PNG still exists |
 | Inspect failed result details | Failure summary card shows step number, label, type, error, saved step context when available, and compact browser evidence when it exists, including failed requests and HTTP 4xx/5xx responses |
 | Copy failure summary | Clipboard gets a compact plain-text failure summary with browser evidence counts but no JSON dump, full logs, raw request list, or absolute artifact path |
+| Export HTML report | `reports/report-<runId>.html` is created inside the project and shows compact run, step, and browser-evidence diagnostics |
 | Run test with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
 | Start recording | Chromium window opens, status shows "Recording" |
 | Start recording with missing Chromium | Error message tells the user to run `npx playwright install chromium` |
@@ -211,4 +222,5 @@ The path is shown in the run result UI and stored in the result JSON.
 - **No project delete or folder rename:** Projects can be renamed in metadata only, but not deleted or renamed on disk through the UI.
 - **Failure evidence is still MVP-limited:** The Results panel now shows failure screenshots, browser console messages, page errors, request failures, and compact HTTP 4xx/5xx responses, but traces, videos, full HAR capture, and broader network captures are still out of scope.
 - **Network evidence is still selective:** Only `requestfailed` events plus completed 4xx/5xx responses are captured. Successful 2xx/3xx traffic is intentionally excluded in MVP.
+- **HTML export is intentionally lightweight:** The exported report is a standalone local HTML summary. It does not bundle screenshots, traces, headers, bodies, PDF output, or JUnit output yet.
 - **Older historical results may be thinner:** Older run result files created before step snapshots or browser evidence existed will still load, but they may lack historical step detail or browser evidence sections.

@@ -1,8 +1,8 @@
 # Local Project Model
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
-This document defines the MVP local project model for Website Testing Tool. The model is intentionally file-based, inspectable, and small. It should support create/open/save project behavior before recorder, runner, reports, or packaging work begins.
+This document defines the MVP local project model for Website Testing Tool. The model is intentionally file-based, inspectable, and small. It should support create/open/save project behavior while keeping runner, recorder, artifacts, and exported reports local-first.
 
 ## Goals
 
@@ -10,7 +10,7 @@ This document defines the MVP local project model for Website Testing Tool. The 
 - Make project files easy to back up and inspect.
 - Avoid SQLite until query behavior is clearly needed.
 - Keep schema versions explicit from the first implementation.
-- Preserve a path for future tests, results, screenshots, videos, traces, and logs without implementing those features now.
+- Preserve a path for future tests, results, screenshots, videos, traces, logs, and exported reports without overcomplicating the MVP storage model.
 
 ## Project Folder Structure
 
@@ -24,7 +24,8 @@ project-folder/
 │  ├─ screenshots/
 │  ├─ videos/
 │  └─ traces/
-└─ logs/
+├─ logs/
+└─ reports/   (created on first HTML export)
 ```
 
 ## MVP Creation Behavior
@@ -58,6 +59,13 @@ Recent projects are intentionally stored outside project folders so the app can 
   - Drop missing or invalid project folders during refresh instead of surfacing raw filesystem errors in the renderer.
 
 This cache is app state, not project schema. It should not be copied into project folders or treated as portable project data.
+
+## Exported Reports
+
+- HTML run reports are exported on demand under `reports/`.
+- Example path: `reports/report-run_550e8400-e29b-41d4-a716-446655440000.html`
+- The `reports/` directory is not required at project creation time. It is created only when a user exports a saved run result.
+- Export writes must stay inside the selected project folder. The renderer must not choose an arbitrary output path.
 
 ## `project.json` Schema
 
@@ -175,7 +183,6 @@ Each step represents one human-readable action or assertion. The MVP schema supp
 - Recorder implementation.
 - Test runner implementation.
 - Playwright automation.
-- Report generation.
 - SQLite.
 - Cloud sync.
 - Multi-user collaboration.

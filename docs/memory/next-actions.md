@@ -4,11 +4,11 @@ Last updated: 2026-05-08
 
 ## Priority Order
 
-1. Continue runner/results evidence work by adding lightweight request/response context around captured network failures and HTTP errors while keeping storage compact.
-2. Continue recorder/runner hardening after the evidence improvements above are complete.
-3. Apply the new `Local QA Workbench` direction incrementally to shared renderer surfaces without changing product behavior.
-4. Revisit broader project recovery or migration flows only after failure diagnostics and workflow clarity improve.
-5. Return to final publisher/legal entity selection only when code signing, installer branding, or commercial release prep becomes active work.
+1. Add a small follow-through action for exported HTML reports, such as opening the exported report or revealing it in the project folder without exposing arbitrary filesystem browsing.
+2. Continue runner/results evidence work by adding lightweight request/response context around captured network failures and HTTP errors while keeping storage compact.
+3. Continue recorder/runner hardening after the evidence improvements above are complete.
+4. Apply the new `Local QA Workbench` direction incrementally to shared renderer surfaces without changing product behavior.
+5. Revisit broader project recovery or migration flows only after failure diagnostics and workflow clarity improve.
 
 ## Notes
 
@@ -28,6 +28,7 @@ Last updated: 2026-05-08
 - Failed run results now preview their saved screenshot through a validated main-process PNG reader instead of exposing raw filesystem access to the renderer.
 - Failed and error runs now show a copyable failure summary, and the summary now includes browser evidence counts without dumping raw logs.
 - Run results now capture capped browser console messages, page errors, request failures, and compact HTTP errors, and the Results panel now surfaces them in a compact Browser evidence section when present.
+- Selected saved runs can now be exported as standalone HTML reports under `reports/` through a main-process path that validates run IDs and keeps writes inside the current project.
 - Step reordering is now implemented in the manual step editor with simple Move Up / Move Down controls. No drag-and-drop library was added.
 - Test rename, duplicate, and guarded delete are now implemented in the Tests workspace. Rename stays on the existing `saveTestCase` path, duplicates get a new `testId` and fresh step IDs, and delete uses inline confirmation before file removal.
 - `docs/ux/product-style-direction.md` defines the chosen product direction: a Linear-led `Local QA Workbench` blend with Cursor, Raycast, Sentry, and Stripe as secondary references.

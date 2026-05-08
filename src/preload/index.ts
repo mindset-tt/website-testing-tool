@@ -91,6 +91,10 @@ const api: WebsiteTestingToolApi = {
     readFailureScreenshot: (projectPath, screenshotPath) =>
       ipcRenderer.invoke(IPC_CHANNELS.resultReadFailureScreenshot, projectPath, screenshotPath) as Promise<
         Awaited<ReturnType<WebsiteTestingToolApi['result']['readFailureScreenshot']>>
+      >,
+    exportRunHtmlReport: (projectPath, runId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.resultExportHtmlReport, projectPath, runId) as Promise<
+        Awaited<ReturnType<WebsiteTestingToolApi['result']['exportRunHtmlReport']>>
       >
   }
 };

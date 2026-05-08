@@ -27,6 +27,7 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 - Runtime validation from this Codex Windows shell requires clearing `ELECTRON_RUN_AS_NODE=1` before launching Electron or packaged-app processes.
 - The Results panel now previews failure screenshots through a validated preload/main-process bridge that only allows `.png` files inside the selected project's `artifacts/screenshots` directory.
 - The Results panel now also renders a compact failed-step summary and can copy a plain-text failure summary for failed and error runs by using the browser clipboard API from the renderer.
+- Selected saved runs can now be exported through a validated preload/main-process bridge as standalone HTML reports under the project-local `reports/` directory. The renderer supplies only project path plus run ID, and the main process keeps the write inside the selected project.
 - Run results now capture historical `stepSnapshots`, preserving the exact step target, value, timeout, and notes at run time while still falling back safely for older results.
 - Run results now also capture capped browser console messages and page errors through Playwright `page.on('console')` and `page.on('pageerror')` listeners. Those fields are optional so older saved results remain valid with no migration.
 - Run results now also capture capped request failures through Playwright `page.on('requestfailed')`. Capture is intentionally narrow for MVP: failed requests only, no full HAR, and simple filtering of obviously internal URL schemes.
@@ -43,9 +44,9 @@ The MVP architecture is accepted in ADR-0002 and implemented far enough to suppo
 
 - Electron size and security hardening remain ongoing costs.
 - Playwright browser discovery, first-run install behavior, and offline packaging strategy are still open product risks because the current fix is clear messaging, not a polished install flow.
-- Results diagnostics are stronger now, but richer browser/network evidence such as lightweight request/response context, traces, or navigable artifact bundles are still open product work.
+- Results diagnostics are stronger now, but richer browser/network evidence such as lightweight request/response context, traces, navigable artifact bundles, or follow-through actions for exported reports are still open product work.
 - Final commercial publisher metadata, code signing, and update strategy are still undecided.
 
 ## Next Work
 
-Continue improving runner and results diagnostics now that historical failed-step context plus console/page-error/request-failure/HTTP-error evidence are covered, starting with the next compact high-signal gap such as lightweight request/response context, while keeping the accepted local-first architecture intact.
+Continue improving runner and results diagnostics now that historical failed-step context plus console/page-error/request-failure/HTTP-error evidence and HTML export are covered, starting with either a small exported-report follow-through action or the next compact request/response context gap while keeping the accepted local-first architecture intact.

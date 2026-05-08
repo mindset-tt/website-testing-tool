@@ -17,5 +17,6 @@ export const IPC_CHANNELS = {
   browserChromiumAvailability: 'browser:chromiumAvailability',
   resultList: 'result:list',
   resultRead: 'result:read',
-  resultReadFailureScreenshot: 'result:readFailureScreenshot'
+  resultReadFailureScreenshot: 'result:readFailureScreenshot',
+  resultExportHtmlReport: 'result:exportHtmlReport'
 } as const;

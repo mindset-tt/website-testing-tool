@@ -1547,9 +1547,29 @@ select:focus-visible,
   padding-top: 18px;
 }
 
+.report-detail-header,
+.report-detail-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.report-detail-header {
+  justify-content: space-between;
+}
+
+.report-detail-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .report-detail h3,
 .report-detail h4 {
   margin: 0 0 14px;
+}
+
+.report-detail-header h3 {
+  margin: 0;
 }
 
 .report-detail h4,
@@ -1611,6 +1631,10 @@ select:focus-visible,
 
 .report-copy-notice {
   margin-top: 12px;
+}
+
+.report-export-notice {
+  margin: 12px 0 0;
 }
 
 .report-browser-evidence {
