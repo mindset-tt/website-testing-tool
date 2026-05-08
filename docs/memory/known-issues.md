@@ -11,7 +11,7 @@ Last updated: 2026-05-08
 - Code signing, SmartScreen reputation, and auto-update remain unresolved commercial packaging work.
 - Missing Chromium is now explained clearly in the app, but recovery still depends on a manual `npx playwright install chromium` step. There is no supported in-app browser installer yet.
 - This Codex Windows shell exports `ELECTRON_RUN_AS_NODE=1`, so direct Electron or packaged-app launches from automation will exit immediately unless that environment variable is cleared first.
-- Recorder selectors are still basic (`id`, `data-testid`, `name`, `tag + class`) and can remain brittle on real sites.
+- Recorder selectors now follow a priority order (data-testid → data-test → data-qa → id → name → aria-label → class → tag) with confidence badges, but they can still be brittle on sites without data attributes or stable IDs.
 - Recorded steps can now be saved to new or existing tests, but assertText steps are not captured by the recorder and must be added manually in the step editor.
 - Destructive project delete, project folder rename, migration, and fuller recovery flows do not exist yet.
 - Failure screenshots, browser console messages, page errors, request failures, and compact HTTP errors now appear in Results diagnostics, but traces, full HAR/network captures, and richer artifact navigation are still absent for some real QA workflows.

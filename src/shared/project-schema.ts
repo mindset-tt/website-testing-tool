@@ -1,3 +1,5 @@
+import type { SelectorConfidence } from './selectorGeneration';
+
 export const PROJECT_SCHEMA_VERSION = 1;
 export const TEST_CASE_SCHEMA_VERSION = 1;
 export const RUN_RESULT_SCHEMA_VERSION = 1;
@@ -44,6 +46,14 @@ export interface TestStep {
   readonly value?: string;
   readonly timeoutMs?: number;
   readonly notes?: string;
+  /**
+   * Selector confidence from the recorder.
+   * 'high' for data-testid/data-test/data-qa/id selectors.
+   * 'medium' for name/aria-label selectors.
+   * 'low' for class/tag fallback selectors.
+   * Absent for manually authored steps or older saved tests.
+   */
+  readonly selectorConfidence?: SelectorConfidence;
 }
 
 export interface TestCase {

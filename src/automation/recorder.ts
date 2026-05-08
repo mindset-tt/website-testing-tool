@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 import type { Browser, Page } from 'playwright';
 
 import { createStepId } from '../shared/project-schema';
+import type { SelectorConfidence } from '../shared/selectorGeneration';
 import type { StepType, TestStep } from '../shared/project-schema';
 import { assertChromiumAvailable, normalizeChromiumLaunchError } from './playwrightBrowser';
 
@@ -10,22 +11,63 @@ export interface RecordedAction {
   readonly label: string;
   readonly target: string;
   readonly value?: string;
+  readonly selectorConfidence?: SelectorConfidence;
 }
 
 const INIT_SCRIPT = `
 (() => {
   let lastUrl = window.location.href;
 
+  function escapeCss(value) {
+    return CSS.escape(value);
+  }
+
   function buildSelector(el) {
-    if (el.id) return '#' + CSS.escape(el.id);
+    // Priority 1: data-testid
     var testId = el.getAttribute('data-testid');
-    if (testId) return '[data-testid="' + CSS.escape(testId) + '"]';
-    var name = el.getAttribute('name');
-    if (name) return el.tagName.toLowerCase() + '[name="' + CSS.escape(name) + '"]';
+    if (testId && testId.trim().length > 0) {
+      return { selector: '[data-testid="' + escapeCss(testId.trim()) + '"]', confidence: 'high' };
+    }
+
+    // Priority 2: data-test
+    var dataTest = el.getAttribute('data-test');
+    if (dataTest && dataTest.trim().length > 0) {
+      return { selector: '[data-test="' + escapeCss(dataTest.trim()) + '"]', confidence: 'high' };
+    }
+
+    // Priority 3: data-qa
+    var dataQa = el.getAttribute('data-qa');
+    if (dataQa && dataQa.trim().length > 0) {
+      return { selector: '[data-qa="' + escapeCss(dataQa.trim()) + '"]', confidence: 'high' };
+    }
+
+    // Priority 4: id
+    if (el.id && el.id.trim().length > 0) {
+      return { selector: '#' + escapeCss(el.id.trim()), confidence: 'high' };
+    }
+
     var tag = el.tagName.toLowerCase();
+
+    // Priority 5: name attribute
+    var name = el.getAttribute('name');
+    if (name && name.trim().length > 0) {
+      return { selector: tag + '[name="' + escapeCss(name.trim()) + '"]', confidence: 'medium' };
+    }
+
+    // Priority 6: aria-label
+    var ariaLabel = el.getAttribute('aria-label');
+    if (ariaLabel && ariaLabel.trim().length > 0) {
+      return { selector: tag + '[aria-label="' + escapeCss(ariaLabel.trim()) + '"]', confidence: 'medium' };
+    }
+
+    // Priority 7: CSS class fallback
     var classes = Array.from(el.classList).filter(function(c) { return c.length > 0 && !c.startsWith('_'); }).slice(0, 2);
-    if (classes.length > 0) return tag + '.' + classes.map(function(c) { return CSS.escape(c); }).join('.');
-    return tag;
+    if (classes.length > 0) {
+      return { selector: tag + '.' + classes.map(function(c) { return escapeCss(c); }).join('.'), confidence: 'low' };
+    }
+
+    // Priority 8: tag fallback
+    return { selector: tag, confidence: 'low' };
   }
 
   function buildLabel(el, actionType) {
@@ -46,16 +88,16 @@ const INIT_SCRIPT = `
     var currentUrl = window.location.href;
     if (currentUrl !== lastUrl) {
       lastUrl = currentUrl;
-      window.__wtt_pushAction({ type: 'navigate', label: 'Go to ' + currentUrl, target: currentUrl });
+      window.__wtt_pushAction({ type: 'navigate', label: 'Go to ' + currentUrl, target: currentUrl, selectorConfidence: 'high' });
     }
   }
 
   document.addEventListener('click', function(event) {
     var el = event.target;
     if (!el || el === document.body || el === document.documentElement) return;
-    var selector = buildSelector(el);
+    var result = buildSelector(el);
     var label = buildLabel(el, 'click');
-    window.__wtt_pushAction({ type: 'click', label: label, target: selector });
+    window.__wtt_pushAction({ type: 'click', label: label, target: result.selector, selectorConfidence: result.confidence });
   }, true);
 
   document.addEventListener('change', function(event) {
@@ -63,9 +105,9 @@ const INIT_SCRIPT = `
     if (!el || !('value' in el)) return;
     var value = el.value;
     if (!value) return;
-    var selector = buildSelector(el);
+    var result = buildSelector(el);
     var label = buildLabel(el, 'fill');
-    window.__wtt_pushAction({ type: 'fill', label: label, target: selector, value: value });
+    window.__wtt_pushAction({ type: 'fill', label: label, target: result.selector, value: value, selectorConfidence: result.confidence });
   }, true);
 
   reportNavigation();
@@ -194,7 +236,8 @@ export class Recorder {
       type: action.type,
       label: action.label,
       target: action.target,
-      value: action.value
+      value: action.value,
+      selectorConfidence: action.selectorConfidence
     }));
   }
 }

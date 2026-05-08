@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { CircleDot, FilePlus, ListPlus, Radio, RefreshCw } from 'lucide-react';
 
 import type { TestStep } from '../../shared/project-schema';
+import type { SelectorConfidence } from '../../shared/selectorGeneration';
 
 interface RecorderPanelProps {
   readonly projectName: string;
@@ -13,6 +14,13 @@ interface RecorderPanelProps {
   readonly onSaveAsNewTest: (steps: readonly TestStep[]) => Promise<void>;
   readonly onAppendToTest: (steps: readonly TestStep[]) => Promise<void>;
   readonly onReplaceTestSteps: (steps: readonly TestStep[]) => Promise<void>;
+}
+
+function confidenceLabel(confidence: SelectorConfidence): string {
+  if (confidence === 'high') return 'High';
+  if (confidence === 'medium') return 'Medium';
+
+  return 'Low';
 }
 
 export function RecorderPanel({
@@ -207,6 +215,11 @@ export function RecorderPanel({
                     <span className="recorder-step-index">{i + 1}.</span>
                     <span className="recorder-step-type-badge">{step.type}</span>
                     <span className="recorder-step-label">{step.label}</span>
+                    {step.selectorConfidence && (
+                      <span className={`recorder-confidence-badge recorder-confidence-${step.selectorConfidence}`}>
+                        {confidenceLabel(step.selectorConfidence)}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>

@@ -252,6 +252,7 @@ The path is shown in the run result UI and stored in the result JSON.
 ## Known Limitations
 
 - **assertText not captured by recorder:** Must be added manually in the step editor.
+- **Selector confidence shown in recorder preview:** Recorded steps now show High/Medium/Low confidence badges based on selector type. High: data-testid/data-test/data-qa/id. Medium: name/aria-label. Low: class/tag fallback.
 - **Basic selectors only:** Recorder uses id, data-testid, name, or tag+class. No smart locator generation.
 - **Single run only:** No concurrent or parallel test execution.
 - **Chromium only:** No Firefox or WebKit support in MVP.

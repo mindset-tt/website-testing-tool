@@ -1445,7 +1445,7 @@ select:focus-visible,
   border-radius: var(--radius-md);
   display: grid;
   gap: 10px;
-  grid-template-columns: 28px auto minmax(0, 1fr);
+  grid-template-columns: 28px auto minmax(0, 1fr) auto;
   padding: 12px;
 }
 
@@ -1463,6 +1463,32 @@ select:focus-visible,
   font-size: 0.72rem;
   font-weight: 700;
   padding: 4px 9px;
+}
+
+.recorder-confidence-badge {
+  border-radius: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+
+.recorder-confidence-high {
+  background: rgba(86, 202, 133, 0.12);
+  border: 1px solid rgba(86, 202, 133, 0.3);
+  color: var(--color-success-default);
+}
+
+.recorder-confidence-medium {
+  background: rgba(245, 165, 36, 0.12);
+  border: 1px solid rgba(245, 165, 36, 0.3);
+  color: var(--color-warning-default);
+}
+
+.recorder-confidence-low {
+  background: rgba(236, 90, 107, 0.1);
+  border: 1px solid rgba(236, 90, 107, 0.25);
+  color: var(--color-danger-default);
 }
 
 .recorder-save-actions {
